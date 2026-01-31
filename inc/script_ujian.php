@@ -1,19 +1,28 @@
 <script>
     // Timer Logic
     const storageKey = `timer_<?= $kode_soal ?>_<?= $id_siswa ?>`;
+    const startKey = `start_time_<?= $kode_soal ?>_<?= $id_siswa ?>`;
     let waktu;
 
-    // 1. Cek LocalStorage (untuk reload)
-    const savedWaktu = localStorage.getItem(storageKey);
-
-    if (savedWaktu !== null && parseInt(savedWaktu) > 0) {
-        waktu = parseInt(savedWaktu);
-    } else {
-        // 2. Fallback ke DB atau Durasi Awal
-        waktu = typeof waktuSisaAwal !== 'undefined' && waktuSisaAwal > 0 ?
-            (waktuSisaAwal * 60) :
-            (typeof waktuUjianDuration !== 'undefined' ? (waktuUjianDuration * 60) : 3600);
+    // 1. Initialize or get the Start Time
+    let startTime = localStorage.getItem(startKey);
+    if (!startTime) {
+        startTime = Math.floor(Date.now() / 1000);
+        localStorage.setItem(startKey, startTime);
     }
+
+    // 2. Calculate remaining duration
+    const totalDurationSeconds = typeof waktuSisaAwal !== 'undefined' && waktuSisaAwal > 0 ?
+        (waktuSisaAwal * 60) :
+        (typeof waktuUjianDuration !== 'undefined' ? (waktuUjianDuration * 60) : 3600);
+
+    function calculateRemaining() {
+        const now = Math.floor(Date.now() / 1000);
+        const elapsed = now - parseInt(startTime);
+        return totalDurationSeconds - elapsed;
+    }
+
+    waktu = calculateRemaining();
 
     let soalAktif = 0;
     const totalSoal = <?= count($soal) ?>;
@@ -25,18 +34,22 @@
     }, 500);
 
     function updateTimer() {
+        waktu = calculateRemaining();
+
+        if (waktu <= 0) {
+            waktu = 0;
+            document.getElementById('timer').innerText = "00:00";
+            document.getElementById('formUjian').submit();
+            return;
+        }
+
         let menit = Math.floor(waktu / 60);
-        let detik = waktu % 60;
+        let detik = Math.floor(waktu % 60);
         document.getElementById('timer').innerText =
             `${menit.toString().padStart(2, '0')}:${detik.toString().padStart(2, '0')}`;
-        waktu--;
 
-        // Simpan ke localStorage setiap detik
+        // Keep fallback for background sync
         localStorage.setItem(storageKey, waktu);
-
-        if (waktu < 0) {
-            document.getElementById('formUjian').submit();
-        }
     }
 
     function updateNavigationButtons() {
@@ -186,6 +199,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 localStorage.removeItem(storageKey);
+                localStorage.removeItem(startKey);
                 document.getElementById('formUjian').submit();
             }
         });

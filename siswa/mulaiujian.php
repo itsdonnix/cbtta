@@ -119,6 +119,7 @@ $waktu_sisa = 0;
 $get_waktu = mysqli_query($koneksi, "SELECT waktu_sisa, jawaban_siswa FROM jawaban_siswa WHERE kode_soal='$kode_soal' AND id_siswa='$id_siswa'");
 $jawaban_tersimpan = [];
 if ($w = mysqli_fetch_assoc($get_waktu)) {
+    // Ensure we treat this as seconds
     $waktu_sisa = (int) $w['waktu_sisa'];
     $string_jawaban = $w['jawaban_siswa'];
     preg_match_all('/\[(\d+):([^\]]+)\]/', $string_jawaban, $matches, PREG_SET_ORDER);
@@ -229,17 +230,9 @@ foreach ($matches as $match) {
         const syncInterval = <?= $interval_ms ?>;
         const isUjianSusulan = <?= $is_ujian_susulan ? 'true' : 'false'; ?>;
         const waktuUjianDuration = <?= $waktu_ujian_duration ?>; // Exam duration in minutes
-        const waktuSisaAwal = <?= $waktu_sisa ?>; // Remaining time from database
+        const waktuSisaAwal = <?= $waktu_sisa ?>; // This is now treated as seconds from DB
 
-        // Calculate initial time for timer
-        let initialTime;
-        if (waktuSisaAwal > 0) {
-            // Use remaining time from database if available
-            initialTime = waktuSisaAwal;
-        } else {
-            // Calculate from exam duration (minutes to seconds)
-            initialTime = waktuUjianDuration * 60;
-        }
+        // The JavaScript in script_ujian.php will now handle the subtraction logic
     </script>
 </head>
 
