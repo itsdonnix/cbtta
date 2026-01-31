@@ -41,13 +41,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tanggal = mysqli_real_escape_string($koneksi, $_POST['tanggal']);
     $waktu = mysqli_real_escape_string($koneksi, $_POST['waktu']);
     $tanggal_ujian_susulan = mysqli_real_escape_string($koneksi, $_POST['tanggal_ujian_susulan']);
-
     $waktu_ujian_susulan = mysqli_real_escape_string($koneksi, $_POST['waktu_ujian_susulan']);
 
-    // Validasi tanggal harus hari ini atau setelahnya
+    // Ambil tanggal asli dari database untuk perbandingan
+    $tanggal_asli = mysqli_real_escape_string($koneksi, $_POST['tanggal_asli']);
+    $tanggal_ujian_susulan_asli = mysqli_real_escape_string($koneksi, $_POST['tanggal_ujian_susulan_asli']);
+
+    // Validasi tanggal ujian - hanya jika tanggal diubah dari nilai asli
     $today = date('Y-m-d');
-    if ($tanggal < $today) {
-        $_SESSION['error'] = 'Tanggal ujian harus hari ini atau setelah hari ini.';
+    if ($tanggal !== $tanggal_asli && $tanggal < $today) {
+        $_SESSION['error'] = 'Tanggal ujian harus hari ini atau setelah hari ini jika diubah.';
         header("Location: edit_soal.php?id_soal=$id_soal");
         exit;
     }
@@ -62,8 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Jika tanggal ujian susulan diisi, validasi harus hari ini atau setelahnya
-    if (!empty($tanggal_ujian_susulan) && $tanggal_ujian_susulan < $today) {
-        $_SESSION['error'] = 'Tanggal ujian susulan harus hari ini atau setelah hari ini.';
+    // Hanya validasi jika tanggal susulan diubah dari nilai asli
+    if (!empty($tanggal_ujian_susulan) && $tanggal_ujian_susulan !== $tanggal_ujian_susulan_asli && $tanggal_ujian_susulan < $today) {
+        $_SESSION['error'] = 'Tanggal ujian susulan harus hari ini atau setelah hari ini jika diubah.';
         header("Location: edit_soal.php?id_soal=$id_soal");
         exit;
     }
@@ -103,6 +107,65 @@ $today = date('Y-m-d');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Soal</title>
     <?php include '../inc/css.php'; ?>
+    <script>
+        function updateDateValidation() {
+            const tanggalInput = document.getElementById('tanggal');
+            const tanggalAsli = document.getElementById('tanggal_asli').value;
+            const today = '<?php echo $today; ?>';
+
+            // Jika tanggal sama dengan asli, hilangkan min attribute
+            if (tanggalInput.value === tanggalAsli) {
+                tanggalInput.removeAttribute('min');
+                // Update help text
+                const helpText = tanggalInput.nextElementSibling;
+                if (helpText && helpText.classList.contains('text-muted')) {
+                    helpText.textContent = 'Tanggal asli dipertahankan. Jika diubah, harus hari ini atau setelahnya.';
+                }
+            } else {
+                // Jika tanggal diubah, set min attribute ke hari ini
+                tanggalInput.setAttribute('min', today);
+                // Update help text
+                const helpText = tanggalInput.nextElementSibling;
+                if (helpText && helpText.classList.contains('text-muted')) {
+                    helpText.textContent = 'Tanggal harus hari ini atau setelahnya';
+                }
+            }
+        }
+
+        function updateSusulanDateValidation() {
+            const tanggalSusulanInput = document.getElementById('tanggal_ujian_susulan');
+            const tanggalSusulanAsli = document.getElementById('tanggal_ujian_susulan_asli').value;
+            const today = '<?php echo $today; ?>';
+
+            // Jika tanggal susulan sama dengan asli atau kosong, hilangkan min attribute
+            if (tanggalSusulanInput.value === tanggalSusulanAsli || tanggalSusulanInput.value === '') {
+                tanggalSusulanInput.removeAttribute('min');
+                // Update help text
+                const helpText = tanggalSusulanInput.nextElementSibling;
+                if (helpText && helpText.classList.contains('text-muted')) {
+                    if (tanggalSusulanInput.value === '') {
+                        helpText.textContent = 'Kosongkan jika tidak ada ujian susulan';
+                    } else {
+                        helpText.textContent = 'Tanggal asli dipertahankan. Jika diubah, harus hari ini atau setelahnya.';
+                    }
+                }
+            } else {
+                // Jika tanggal susulan diubah, set min attribute ke hari ini
+                tanggalSusulanInput.setAttribute('min', today);
+                // Update help text
+                const helpText = tanggalSusulanInput.nextElementSibling;
+                if (helpText && helpText.classList.contains('text-muted')) {
+                    helpText.textContent = 'Tanggal harus hari ini atau setelahnya';
+                }
+            }
+        }
+
+        // Initialize validation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateValidation();
+            updateSusulanDateValidation();
+        });
+    </script>
 </head>
 
 <body>
@@ -129,6 +192,10 @@ $today = date('Y-m-d');
                                     $result_kelas = mysqli_query($koneksi, $query_kelas);
                                     ?>
                                     <form method="POST">
+                                        <!-- Hidden fields untuk menyimpan nilai asli -->
+                                        <input type="hidden" id="tanggal_asli" name="tanggal_asli" value="<?php echo $row['tanggal']; ?>">
+                                        <input type="hidden" id="tanggal_ujian_susulan_asli" name="tanggal_ujian_susulan_asli" value="<?php echo $row['tanggal_ujian_susulan']; ?>">
+
                                         <div class="mb-3">
                                             <h2>Kode Soal : <?php echo $row['kode_soal']; ?></h2>
                                             <input type="hidden" class="form-control" id="kode_soal" name="kode_soal" value="<?php echo $row['kode_soal']; ?>" required>
@@ -168,8 +235,8 @@ $today = date('Y-m-d');
                                             <label for="tanggal" class="form-label">Tanggal Ujian</label>
                                             <input type="date" class="form-control" id="tanggal" name="tanggal"
                                                 value="<?php echo $row['tanggal']; ?>"
-                                                min="<?php echo $today; ?>" required onclick="this.showPicker()">
-                                            <small class="text-muted">Tanggal harus hari ini atau setelahnya</small>
+                                                onchange="updateDateValidation()" onclick="this.showPicker()">
+                                            <small class="text-muted">Tanggal asli dipertahankan. Jika diubah, harus hari ini atau setelahnya.</small>
                                         </div>
                                         <div class="mb-3">
                                             <label for="waktu" class="form-label">Waktu Ujian</label>
@@ -187,8 +254,8 @@ $today = date('Y-m-d');
                                                     <input type="date" class="form-control" id="tanggal_ujian_susulan"
                                                         name="tanggal_ujian_susulan"
                                                         value="<?php echo $row['tanggal_ujian_susulan']; ?>"
-                                                        min="<?php echo $today; ?>" onclick="this.showPicker()">
-                                                    <small class="text-muted">Kosongkan jika tidak ada ujian susulan</small>
+                                                        onchange="updateSusulanDateValidation()" onclick="this.showPicker()">
+                                                    <small class="text-muted">Tanggal asli dipertahankan. Jika diubah, harus hari ini atau setelahnya.</small>
                                                 </div>
                                                 <div class="mb-3">
                                                     <label for="waktu_ujian_susulan" class="form-label">Waktu Ujian Susulan</label>
