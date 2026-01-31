@@ -1,6 +1,6 @@
-    <script>
+<script>
 // Timer Logic
-let waktu = <?= $waktu_sisa > 0 ? ($waktu_sisa * 60) : 3600 ?>;
+let waktu = typeof waktuSisaAwal !== 'undefined' && waktuSisaAwal > 0 ? (waktuSisaAwal * 60) : (typeof waktuUjianDuration !== 'undefined' ? (waktuUjianDuration * 60) : 3600);
 let soalAktif = 0;
 const totalSoal = <?= count($soal) ?>;
 

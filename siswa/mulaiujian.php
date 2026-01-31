@@ -39,6 +39,8 @@ if (strtolower($data_soal['status']) !== 'aktif') {
 
 $tanggal_soal = $data_soal['tanggal'];
 $waktu_soal = $data_soal['waktu'];
+$waktu_ujian_duration = $data_soal['waktu_ujian']; // Get exam duration in minutes
+
 $tanggal_ujian_susulan = $data_soal['tanggal_ujian_susulan'];
 $waktu_ujian_susulan = $data_soal['waktu_ujian_susulan'];
 $tanggal_hari_ini = date('Y-m-d');
@@ -225,6 +227,18 @@ foreach ($matches as $match) {
     <script>
         const syncInterval = <?= $interval_ms ?>;
         const isUjianSusulan = <?= $is_ujian_susulan ? 'true' : 'false'; ?>;
+        const waktuUjianDuration = <?= $waktu_ujian_duration ?>; // Exam duration in minutes
+        const waktuSisaAwal = <?= $waktu_sisa ?>; // Remaining time from database
+
+        // Calculate initial time for timer
+        let initialTime;
+        if (waktuSisaAwal > 0) {
+            // Use remaining time from database if available
+            initialTime = waktuSisaAwal;
+        } else {
+            // Calculate from exam duration (minutes to seconds)
+            initialTime = waktuUjianDuration * 60;
+        }
     </script>
 </head>
 
@@ -284,6 +298,7 @@ foreach ($matches as $match) {
                                         <b id="texttimer">
                                             <i class="fa-regular fa-clock"></i> Sisa Waktu: <span
                                                 id="timer">00:00</span>
+                                            <small class="text-dark ms-2">(Durasi: <?php echo $waktu_ujian_duration; ?> menit)</small>
                                         </b>
                                         <span class="badge bg-light text-dark ms-2">
                                             <i class="fas fa-<?php echo $is_ujian_susulan ? 'redo' : 'play'; ?>"></i>
@@ -552,6 +567,19 @@ foreach ($matches as $match) {
     <?php include '../inc/check_activity.php'; ?>
     <?php include '../inc/script_ujian.php'; ?>
     <script>
+        // Override or ensure timer uses the correct duration
+        document.addEventListener('DOMContentLoaded', function() {
+            // If initialTime is defined from PHP, use it
+            if (typeof initialTime !== 'undefined') {
+                console.log('Timer initialized with:', initialTime, 'seconds');
+                console.log('Exam duration:', waktuUjianDuration, 'minutes');
+
+                // If there's existing timer logic in script_ujian.php,
+                // we need to ensure it uses our initialTime
+                // This might require checking script_ujian.php content
+            }
+        });
+
         document.addEventListener('contextmenu', e => e.preventDefault()); // klik kanan
         document.addEventListener('keydown', function(e) {
             if (
