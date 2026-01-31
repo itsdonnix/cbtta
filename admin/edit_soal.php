@@ -39,6 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tampilan_soal = mysqli_real_escape_string($koneksi, $_POST['tampilan_soal']);
     $waktu_ujian = mysqli_real_escape_string($koneksi, $_POST['waktu_ujian']);
     $tanggal = mysqli_real_escape_string($koneksi, $_POST['tanggal']);
+    $waktu = mysqli_real_escape_string($koneksi, $_POST['waktu']);
+
+    // Validasi tanggal harus hari ini atau setelahnya
+    $today = date('Y-m-d');
+    if ($tanggal < $today) {
+        $_SESSION['error'] = 'Tanggal ujian harus hari ini atau setelah hari ini.';
+        header("Location: edit_soal.php?id_soal=$id_soal");
+        exit;
+    }
 
     // Update data soal
     $update_query = "UPDATE soal SET 
@@ -48,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         kelas = '$kelas', 
                         tampilan_soal = '$tampilan_soal', 
                         waktu_ujian = '$waktu_ujian', 
-                        tanggal = '$tanggal'
+                        tanggal = '$tanggal',
+                        waktu = '$waktu'
                     WHERE id_soal = '$id_soal'";
 
     if (mysqli_query($koneksi, $update_query)) {
@@ -59,6 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         echo "Error: " . mysqli_error($koneksi);
     }
 }
+
+// Get today's date for the min attribute in HTML
+$today = date('Y-m-d');
 ?>
 
 <!DOCTYPE html>
@@ -90,10 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
                                 <div class="card-body">
                                     <?php
-                                        // Ambil data kelas dari tabel siswa secara DISTINCT
-                                        $query_kelas = "SELECT DISTINCT kelas FROM siswa ORDER BY kelas ASC";
-                                        $result_kelas = mysqli_query($koneksi, $query_kelas);
-                                        ?>
+                                    // Ambil data kelas dari tabel siswa secara DISTINCT
+                                    $query_kelas = "SELECT DISTINCT kelas FROM siswa ORDER BY kelas ASC";
+                                    $result_kelas = mysqli_query($koneksi, $query_kelas);
+                                    ?>
                                     <form method="POST">
                                         <div class="mb-3">
                                             <h2>Kode Soal : <?php echo $row['kode_soal']; ?></h2>
@@ -126,16 +139,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                             <label for="tampilan_soal" class="form-label">Tampilan Soal</label>
                                             <select class="form-control" id="tampilan_soal" name="tampilan_soal" required>
                                                 <option value="<?php echo $row['tampilan_soal']; ?>"><?php echo $row['tampilan_soal']; ?></option>
-                                                    <option value="Acak">Acak</option>
-                                                    <option value="Urut">Urut</option>
+                                                <option value="Acak">Acak</option>
+                                                <option value="Urut">Urut</option>
                                             </select>
                                         </div>
                                         <div class="mb-3">
                                             <label for="tanggal" class="form-label">Tanggal Ujian</label>
-                                            <input type="date" class="form-control" id="tanggal" name="tanggal" value="<?php echo $row['tanggal']; ?>" required onclick="this.showPicker()">
+                                            <input type="date" class="form-control" id="tanggal" name="tanggal"
+                                                value="<?php echo $row['tanggal']; ?>"
+                                                min="<?php echo $today; ?>" required onclick="this.showPicker()">
+                                            <small class="text-muted">Tanggal harus hari ini atau setelahnya</small>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="waktu" class="form-label">Waktu Ujian</label>
+                                            <input type="time" class="form-control" id="waktu" name="waktu"
+                                                value="<?php echo $row['waktu']; ?>" required>
                                         </div>
                                         <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Simpan</button>
-										<a href="soal.php" class="btn btn-danger">Batal</a>
+                                        <a href="soal.php" class="btn btn-danger">Batal</a>
                                     </form>
                                 </div>
                             </div>
@@ -147,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         </div>
     </div>
-<?php include '../inc/js.php'; ?>
+    <?php include '../inc/js.php'; ?>
 </body>
+
 </html>
