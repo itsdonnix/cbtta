@@ -16,7 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tampilan_soal = mysqli_real_escape_string($koneksi, $_POST['tampilan_soal']);
     $waktu_ujian = mysqli_real_escape_string($koneksi, $_POST['waktu_ujian']);
     $tanggal = mysqli_real_escape_string($koneksi, $_POST['tanggal']);
-    $waktu = mysqli_real_escape_string($koneksi, $_POST['jam']);
+    $waktu = mysqli_real_escape_string($koneksi, $_POST['waktu']);
+    $tanggal_ujian_susulan = mysqli_real_escape_string($koneksi, $_POST['tanggal_ujian_susulan']);
+    $waktu_ujian_susulan = mysqli_real_escape_string($koneksi, $_POST['waktu_ujian_susulan']);
 
     // Cek duplikasi kode_soal
     $cek_kode = mysqli_query($koneksi, "SELECT * FROM soal WHERE kode_soal = '$kode_soal'");
@@ -34,8 +36,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    $query = "INSERT INTO soal (kode_soal, nama_soal, mapel, kelas, waktu_ujian, tampilan_soal, tanggal, waktu)
-              VALUES ('$kode_soal', '$nama_soal', '$mapel', '$kelas', '$waktu_ujian', '$tampilan_soal', '$tanggal', '$waktu')";
+    // Validasi tanggal dan waktu ujian susulan - harus diisi kedua-duanya atau tidak sama sekali
+    if ((!empty($tanggal_ujian_susulan) && empty($waktu_ujian_susulan)) ||
+        (empty($tanggal_ujian_susulan) && !empty($waktu_ujian_susulan))
+    ) {
+        $_SESSION['error'] = 'Tanggal dan Waktu Ujian Susulan harus diisi kedua-duanya atau tidak sama sekali.';
+        header('Location: tambah_soal.php');
+        exit;
+    }
+
+    // Jika tanggal ujian susulan diisi, validasi harus hari ini atau setelahnya
+    if (!empty($tanggal_ujian_susulan) && $tanggal_ujian_susulan < $today) {
+        $_SESSION['error'] = 'Tanggal ujian susulan harus hari ini atau setelah hari ini.';
+        header('Location: tambah_soal.php');
+        exit;
+    }
+
+    // Generate default values for missing fields
+    $status = 'Nonaktif';
+    $kunci = '';
+    $token = '';
+
+    // Jika tanggal ujian susulan kosong, set ke NULL
+    $tanggal_ujian_susulan_value = !empty($tanggal_ujian_susulan) ? "'$tanggal_ujian_susulan'" : "NULL";
+    $waktu_ujian_susulan_value = !empty($waktu_ujian_susulan) ? "'$waktu_ujian_susulan'" : "NULL";
+
+    $query = "INSERT INTO soal (kode_soal, nama_soal, mapel, kelas, waktu_ujian, tampilan_soal, tanggal, waktu, 
+                                tanggal_ujian_susulan, waktu_ujian_susulan, status, kunci, token)
+              VALUES ('$kode_soal', '$nama_soal', '$mapel', '$kelas', '$waktu_ujian', '$tampilan_soal', '$tanggal', '$waktu',
+                      $tanggal_ujian_susulan_value, $waktu_ujian_susulan_value, '$status', '$kunci', '$token')";
 
     if (mysqli_query($koneksi, $query)) {
         $_SESSION['success'] = 'Soal berhasil ditambahkan.';
@@ -123,9 +152,31 @@ $today = date('Y-m-d');
                                             <small class="text-muted">Tanggal harus hari ini atau setelahnya</small>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="jam" class="form-label">Jam Ujian</label>
-                                            <input type="time" class="form-control" id="jam" name="jam" required>
+                                            <label for="waktu" class="form-label">Waktu Ujian</label>
+                                            <input type="time" class="form-control" id="waktu" name="waktu" required>
                                         </div>
+
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <h6 class="card-title mb-0">Ujian Susulan (Opsional)</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label for="tanggal_ujian_susulan" class="form-label">Tanggal Ujian Susulan</label>
+                                                    <input type="date" class="form-control" id="tanggal_ujian_susulan"
+                                                        name="tanggal_ujian_susulan" min="<?php echo $today; ?>"
+                                                        onclick="this.showPicker()">
+                                                    <small class="text-muted">Kosongkan jika tidak ada ujian susulan</small>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="waktu_ujian_susulan" class="form-label">Waktu Ujian Susulan</label>
+                                                    <input type="time" class="form-control" id="waktu_ujian_susulan"
+                                                        name="waktu_ujian_susulan">
+                                                    <small class="text-muted">Harus diisi jika tanggal susulan diisi</small>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Simpan</button>
                                         <a href="soal.php" class="btn btn-danger">Batal</a>
                                     </form>

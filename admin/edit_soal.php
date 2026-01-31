@@ -40,11 +40,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $waktu_ujian = mysqli_real_escape_string($koneksi, $_POST['waktu_ujian']);
     $tanggal = mysqli_real_escape_string($koneksi, $_POST['tanggal']);
     $waktu = mysqli_real_escape_string($koneksi, $_POST['waktu']);
+    $tanggal_ujian_susulan = mysqli_real_escape_string($koneksi, $_POST['tanggal_ujian_susulan']);
+
+    $waktu_ujian_susulan = mysqli_real_escape_string($koneksi, $_POST['waktu_ujian_susulan']);
 
     // Validasi tanggal harus hari ini atau setelahnya
     $today = date('Y-m-d');
     if ($tanggal < $today) {
         $_SESSION['error'] = 'Tanggal ujian harus hari ini atau setelah hari ini.';
+        header("Location: edit_soal.php?id_soal=$id_soal");
+        exit;
+    }
+
+    // Validasi tanggal dan waktu ujian susulan - harus diisi kedua-duanya atau tidak sama sekali
+    if ((!empty($tanggal_ujian_susulan) && empty($waktu_ujian_susulan)) ||
+        (empty($tanggal_ujian_susulan) && !empty($waktu_ujian_susulan))
+    ) {
+        $_SESSION['error'] = 'Tanggal dan Waktu Ujian Susulan harus diisi kedua-duanya atau tidak sama sekali.';
+        header("Location: edit_soal.php?id_soal=$id_soal");
+        exit;
+    }
+
+    // Jika tanggal ujian susulan diisi, validasi harus hari ini atau setelahnya
+    if (!empty($tanggal_ujian_susulan) && $tanggal_ujian_susulan < $today) {
+        $_SESSION['error'] = 'Tanggal ujian susulan harus hari ini atau setelah hari ini.';
         header("Location: edit_soal.php?id_soal=$id_soal");
         exit;
     }
@@ -58,7 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         tampilan_soal = '$tampilan_soal', 
                         waktu_ujian = '$waktu_ujian', 
                         tanggal = '$tanggal',
-                        waktu = '$waktu'
+                        waktu = '$waktu',
+                        tanggal_ujian_susulan = " . (!empty($tanggal_ujian_susulan) ? "'$tanggal_ujian_susulan'" : "NULL") . ",
+                        waktu_ujian_susulan = " . (!empty($waktu_ujian_susulan) ? "'$waktu_ujian_susulan'" : "NULL") . "
                     WHERE id_soal = '$id_soal'";
 
     if (mysqli_query($koneksi, $update_query)) {
@@ -155,6 +176,30 @@ $today = date('Y-m-d');
                                             <input type="time" class="form-control" id="waktu" name="waktu"
                                                 value="<?php echo $row['waktu']; ?>" required>
                                         </div>
+
+                                        <div class="card mb-3">
+                                            <div class="card-header">
+                                                <h6 class="card-title mb-0">Ujian Susulan (Opsional)</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label for="tanggal_ujian_susulan" class="form-label">Tanggal Ujian Susulan</label>
+                                                    <input type="date" class="form-control" id="tanggal_ujian_susulan"
+                                                        name="tanggal_ujian_susulan"
+                                                        value="<?php echo $row['tanggal_ujian_susulan']; ?>"
+                                                        min="<?php echo $today; ?>" onclick="this.showPicker()">
+                                                    <small class="text-muted">Kosongkan jika tidak ada ujian susulan</small>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="waktu_ujian_susulan" class="form-label">Waktu Ujian Susulan</label>
+                                                    <input type="time" class="form-control" id="waktu_ujian_susulan"
+                                                        name="waktu_ujian_susulan"
+                                                        value="<?php echo $row['waktu_ujian_susulan']; ?>">
+                                                    <small class="text-muted">Harus diisi jika tanggal susulan diisi</small>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Simpan</button>
                                         <a href="soal.php" class="btn btn-danger">Batal</a>
                                     </form>
