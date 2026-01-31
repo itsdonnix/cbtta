@@ -40,6 +40,7 @@ if (strtolower($data_soal['status']) !== 'aktif') {
 $tanggal_soal = $data_soal['tanggal'];
 $waktu_soal = $data_soal['waktu'];
 $waktu_ujian_duration = $data_soal['waktu_ujian']; // Get exam duration in minutes
+$waktu_ujian_duration_ms = ($waktu_ujian_duration * 60);
 
 $tanggal_ujian_susulan = $data_soal['tanggal_ujian_susulan'];
 $waktu_ujian_susulan = $data_soal['waktu_ujian_susulan'];
@@ -58,7 +59,7 @@ if (!empty($tanggal_ujian_susulan) && !empty($waktu_ujian_susulan)) {
     $susulan_datetime = strtotime($tanggal_ujian_susulan . ' ' . $waktu_ujian_susulan);
 
     // If current datetime is on or after susulan datetime, it's susulan exam
-    if ($current_datetime >= $susulan_datetime) {
+    if ($current_datetime + $waktu_ujian_duration_ms >= $susulan_datetime) {
         $is_ujian_susulan = true;
     }
 }
@@ -66,7 +67,7 @@ if (!empty($tanggal_ujian_susulan) && !empty($waktu_ujian_susulan)) {
 // Validate exam schedule
 if ($is_ujian_susulan) {
     // For susulan exam, check if we're on or after susulan date/time
-    if ($current_datetime < $susulan_datetime) {
+    if ($current_datetime + $waktu_ujian_duration_ms < $susulan_datetime) {
         $_SESSION['alert'] = true;
         $_SESSION['warning_message'] = 'Ujian susulan belum bisa dikerjakan. Jadwal ujian susulan belum dimulai.';
         header('Location: ujian.php');
@@ -74,7 +75,7 @@ if ($is_ujian_susulan) {
     }
 } else {
     // For utama exam, check if we're on or after utama date/time
-    if ($current_datetime < $utama_datetime) {
+    if ($current_datetime + $waktu_ujian_duration_ms < $utama_datetime) {
         $_SESSION['alert'] = true;
         $_SESSION['warning_message'] = 'Soal belum bisa dikerjakan. Jadwal ujian belum dimulai.';
         header('Location: ujian.php');
