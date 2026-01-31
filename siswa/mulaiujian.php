@@ -35,7 +35,7 @@ if (strtolower($data_soal['status']) !== 'aktif') {
     $_SESSION['warning_message'] = 'Soal Tidak Aktif! Silakan hubungi pengawas.';
     header('Location: ujian.php');
     exit;
-} 
+}
 
 $tanggal_soal = $data_soal['tanggal'];
 $tanggal_hari_ini = date('Y-m-d');
@@ -95,8 +95,7 @@ if ($w = mysqli_fetch_assoc($get_waktu)) {
                 }
             }
             $jawaban_tersimpan[$nomor] = $hasil;
-        }
-        elseif (strpos($jawab, '|') !== false) {
+        } elseif (strpos($jawab, '|') !== false) {
             $jawaban_tersimpan[$nomor] = explode('|', $jawab);
         } elseif (strpos($jawab, ',') !== false) {
             $jawaban_tersimpan[$nomor] = explode(',', $jawab);
@@ -175,7 +174,7 @@ foreach ($matches as $match) {
     <?php include '../inc/css.php'; ?>
     <?php include '../inc/cssujian.php'; ?>
     <script>
-    const syncInterval = <?= $interval_ms ?>;
+        const syncInterval = <?= $interval_ms ?>;
     </script>
 </head>
 
@@ -263,74 +262,74 @@ foreach ($matches as $match) {
                                             $tipe = $s['tipe_soal'];
                                             $pertanyaan = $s['pertanyaan'];
                                             $jawaban = $jawaban_tersimpan[$no_asli] ?? '';
-                                            ?>
-                                        <div class="question-container" id="soal-<?= $index ?>">
-                                            <span class="badge" style="font-size: 12px !important;border:solid 1px grey;color:grey;"><?= $tipe ?></span><br><br>
-                                            <div class="question-text"><?= $pertanyaan ?></div>
+                                        ?>
+                                            <div class="question-container" id="soal-<?= $index ?>">
+                                                <span class="badge" style="font-size: 12px !important;border:solid 1px grey;color:grey;"><?= $tipe ?></span><br><br>
+                                                <div class="question-text"><?= $pertanyaan ?></div>
 
-                                            <?php if ($tipe == 'Pilihan Ganda'): ?>
-                                            <?php
+                                                <?php if ($tipe == 'Pilihan Ganda'): ?>
+                                                    <?php
                                                     $huruf_opsi = ['A', 'B', 'C', 'D'];
                                                     for ($i = 1; $i <= 4; $i++):
                                                         $huruf = $huruf_opsi[$i - 1];
                                                     ?>
-                                            <label class="option-circle">
-                                                <input type="radio" name="jawaban[<?= $no_asli ?>]"
-                                                    value="pilihan_<?= $i ?>"
-                                                    <?= $jawaban == 'pilihan_' . $i ? 'checked' : '' ?>>
-                                                <span><?= $huruf ?></span>
-                                                <?= $s['pilihan_' . $i] ?>
-                                            </label>
-                                            <?php endfor; ?>
+                                                        <label class="option-circle">
+                                                            <input type="radio" name="jawaban[<?= $no_asli ?>]"
+                                                                value="pilihan_<?= $i ?>"
+                                                                <?= $jawaban == 'pilihan_' . $i ? 'checked' : '' ?>>
+                                                            <span><?= $huruf ?></span>
+                                                            <?= $s['pilihan_' . $i] ?>
+                                                        </label>
+                                                    <?php endfor; ?>
 
 
-                                            <?php elseif ($tipe == 'Pilihan Ganda Kompleks'):
+                                                    <?php elseif ($tipe == 'Pilihan Ganda Kompleks'):
                                                     if (!is_array($jawaban)) {
                                                         $jawaban = [$jawaban];
                                                     }
                                                     $huruf_opsi = ['A', 'B', 'C', 'D'];
                                                     for ($i = 1; $i <= 4; $i++):
                                                         $huruf = $huruf_opsi[$i - 1];
-                                                ?>
-                                            <label class="option-circle">
-                                                <input type="checkbox" name="jawaban[<?= $no_asli ?>][]"
-                                                    value="pilihan_<?= $i ?>"
-                                                    <?= in_array('pilihan_' . $i, $jawaban) ? 'checked' : '' ?>>
-                                                <span><?= $huruf ?></span>
-                                                <?= $s['pilihan_' . $i] ?>
-                                            </label>
-                                            <?php endfor; ?>
+                                                    ?>
+                                                        <label class="option-circle">
+                                                            <input type="checkbox" name="jawaban[<?= $no_asli ?>][]"
+                                                                value="pilihan_<?= $i ?>"
+                                                                <?= in_array('pilihan_' . $i, $jawaban) ? 'checked' : '' ?>>
+                                                            <span><?= $huruf ?></span>
+                                                            <?= $s['pilihan_' . $i] ?>
+                                                        </label>
+                                                    <?php endfor; ?>
 
 
-                                            <?php elseif ($tipe == 'Benar/Salah'): ?>
-                                            <table class="matching-table">
-                                                <?php for ($i = 1; $i <= 4; $i++):
+                                                <?php elseif ($tipe == 'Benar/Salah'): ?>
+                                                    <table class="matching-table">
+                                                        <?php for ($i = 1; $i <= 4; $i++):
                                                             $pernyataan = $s['pilihan_' . $i];
                                                             if (trim($pernyataan) == '')
                                                                 continue;
                                                             $jawab = $jawaban[$i - 1] ?? '';
-                                                            ?>
-                                                <tr>
-                                                    <td><?= $pernyataan ?></td>
-                                                    <td>
-                                                        <div class="form-check form-check-inline">
-                                                            <input class="form-check-input" type="radio"
-                                                                name="jawaban[<?= $no_asli ?>][<?= $i ?>]" value="Benar"
-                                                                <?= $jawab == 'Benar' ? 'checked' : '' ?>>
-                                                            <label class="form-check-label">Benar</label>
-                                                        </div>
-                                                        <div class="form-check form-check-inline">
-                                                            <input class="form-check-input" type="radio"
-                                                                name="jawaban[<?= $no_asli ?>][<?= $i ?>]" value="Salah"
-                                                                <?= $jawab == 'Salah' ? 'checked' : '' ?>>
-                                                            <label class="form-check-label">Salah</label>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <?php endfor; ?>
-                                            </table>
+                                                        ?>
+                                                            <tr>
+                                                                <td><?= $pernyataan ?></td>
+                                                                <td>
+                                                                    <div class="form-check form-check-inline">
+                                                                        <input class="form-check-input" type="radio"
+                                                                            name="jawaban[<?= $no_asli ?>][<?= $i ?>]" value="Benar"
+                                                                            <?= $jawab == 'Benar' ? 'checked' : '' ?>>
+                                                                        <label class="form-check-label">Benar</label>
+                                                                    </div>
+                                                                    <div class="form-check form-check-inline">
+                                                                        <input class="form-check-input" type="radio"
+                                                                            name="jawaban[<?= $no_asli ?>][<?= $i ?>]" value="Salah"
+                                                                            <?= $jawab == 'Salah' ? 'checked' : '' ?>>
+                                                                        <label class="form-check-label">Salah</label>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        <?php endfor; ?>
+                                                    </table>
 
-                                            <?php elseif ($tipe == 'Menjodohkan'):
+                                                <?php elseif ($tipe == 'Menjodohkan'):
                                                     $raw = trim($s['jawaban_benar'], "[]");
                                                     $raw = preg_replace('/^\d+\s*:/', '', $raw);
                                                     $pasangan_list = explode('|', $raw);
@@ -350,47 +349,47 @@ foreach ($matches as $match) {
                                                     $jawaban_soal = (is_array($jawaban)) ? $jawaban : [];
                                                     $daftar_kanan = array_values(array_unique(array_column($opsi, 'kanan')));
                                                     shuffle($daftar_kanan);
-                                                    ?>
+                                                ?>
 
-                                            <?php if (count($opsi) === 0): ?>
-                                            <div class="alert alert-warning">Soal menjodohkan belum memiliki pasangan
-                                                yang valid.</div>
-                                            <?php else: ?>
-                                            <?php foreach ($opsi as $p): ?>
-                                            <input type="hidden" name="soal_kiri[<?= $no_asli ?>][]"
-                                                value="<?= htmlspecialchars($p['kiri']) ?>">
-                                            <?php endforeach; ?>
+                                                    <?php if (count($opsi) === 0): ?>
+                                                        <div class="alert alert-warning">Soal menjodohkan belum memiliki pasangan
+                                                            yang valid.</div>
+                                                    <?php else: ?>
+                                                        <?php foreach ($opsi as $p): ?>
+                                                            <input type="hidden" name="soal_kiri[<?= $no_asli ?>][]"
+                                                                value="<?= htmlspecialchars($p['kiri']) ?>">
+                                                        <?php endforeach; ?>
 
-                                            <table class="matching-table">
-                                                <?php foreach ($opsi as $p):
+                                                        <table class="matching-table">
+                                                            <?php foreach ($opsi as $p):
                                                                 $kiri = $p['kiri'];
                                                                 $selected = $jawaban_soal[$kiri] ?? '';
                                                             ?>
-                                                <tr>
-                                                    <td><?= htmlspecialchars($kiri) ?></td>
-                                                    <td>
-                                                        <select
-                                                            name="jawaban[<?= $no_asli ?>][<?= htmlspecialchars($kiri) ?>]"
-                                                            class="form-select">
-                                                            <option value="">-- Pilih --</option>
-                                                            <?php foreach ($daftar_kanan as $dk): ?>
-                                                            <option value="<?= htmlspecialchars($dk) ?>"
-                                                                <?= ($selected === $dk) ? 'selected' : '' ?>>
-                                                                <?= htmlspecialchars($dk) ?>
-                                                            </option>
+                                                                <tr>
+                                                                    <td><?= htmlspecialchars($kiri) ?></td>
+                                                                    <td>
+                                                                        <select
+                                                                            name="jawaban[<?= $no_asli ?>][<?= htmlspecialchars($kiri) ?>]"
+                                                                            class="form-select">
+                                                                            <option value="">-- Pilih --</option>
+                                                                            <?php foreach ($daftar_kanan as $dk): ?>
+                                                                                <option value="<?= htmlspecialchars($dk) ?>"
+                                                                                    <?= ($selected === $dk) ? 'selected' : '' ?>>
+                                                                                    <?= htmlspecialchars($dk) ?>
+                                                                                </option>
+                                                                            <?php endforeach; ?>
+                                                                        </select>
+                                                                    </td>
+                                                                </tr>
                                                             <?php endforeach; ?>
-                                                        </select>
-                                                    </td>
-                                                </tr>
-                                                <?php endforeach; ?>
-                                            </table>
-                                            <?php endif; ?>
+                                                        </table>
+                                                    <?php endif; ?>
 
-                                            <?php elseif ($tipe == 'Uraian'): ?>
-                                            <textarea name="jawaban[<?= $no_asli ?>]"
-                                                class="essay-textarea"><?= htmlspecialchars($jawaban) ?></textarea>
-                                            <?php endif; ?>
-                                        </div>
+                                                <?php elseif ($tipe == 'Uraian'): ?>
+                                                    <textarea name="jawaban[<?= $no_asli ?>]"
+                                                        class="essay-textarea"><?= htmlspecialchars($jawaban) ?></textarea>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php endforeach; ?>
 
                                         <div class="navigation-buttons">
@@ -430,17 +429,17 @@ foreach ($matches as $match) {
                                             <div class="card-body p-2">
                                                 <div class="question-nav d-flex flex-wrap" style="gap: 5px;">
                                                     <?php foreach ($soal as $index => $s): ?>
-                                                    <?php
-                                                            $no_urut = $index + 1;
-                                                            $no_asli = $s['nomer_soal'];
-                                                            $is_answered = isset($status_soal[$no_asli]) && $status_soal[$no_asli]; // TRUE jika sudah dijawab
+                                                        <?php
+                                                        $no_urut = $index + 1;
+                                                        $no_asli = $s['nomer_soal'];
+                                                        $is_answered = isset($status_soal[$no_asli]) && $status_soal[$no_asli]; // TRUE jika sudah dijawab
                                                         ?>
-                                                    <button type="button" class="nav-btn"
-                                                        onclick="tampilSoal(<?= $index ?>); hideNav()"
-                                                        data-nomor="<?= $no_asli ?>" data-urut="<?= $no_urut ?>"
-                                                        <?= $is_answered ? 'data-answered="true"' : '' ?>>
-                                                        <?= $no_urut ?>
-                                                    </button>
+                                                        <button type="button" class="nav-btn"
+                                                            onclick="tampilSoal(<?= $index ?>); hideNav()"
+                                                            data-nomor="<?= $no_asli ?>" data-urut="<?= $no_urut ?>"
+                                                            <?= $is_answered ? 'data-answered="true"' : '' ?>>
+                                                            <?= $no_urut ?>
+                                                        </button>
                                                     <?php endforeach; ?>
                                                 </div>
                                             </div>
@@ -459,9 +458,9 @@ foreach ($matches as $match) {
         <img id="modalImage" class="modal-content-img" alt="Preview">
     </div>
     <?php
-                                                $q = mysqli_query($koneksi, "SELECT * FROM pengaturan WHERE id = 1");
-                                                $data = mysqli_fetch_assoc($q);
-                                                ?>
+    $q = mysqli_query($koneksi, "SELECT * FROM pengaturan WHERE id = 1");
+    $data = mysqli_fetch_assoc($q);
+    ?>
     <footer class="footer mt-auto py-3 bg-dark sticky-bottom">
         <div class="container-fluid">
             <div class="row text-grey">
@@ -481,86 +480,85 @@ foreach ($matches as $match) {
     <?php include '../inc/script_ujian.php'; ?>
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault()); // klik kanan
-document.addEventListener('keydown', function(e) {
-    if (
-      e.key === 'F12' || // DevTools
-      (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
-      (e.ctrlKey && e.key.toLowerCase() === 'u') // Ctrl+U (view source)
-    ) {
-        e.preventDefault();
-    }
-});
-document.addEventListener('keydown', function(e) {
-  // Cegah Ctrl+C (Copy)
-  if (e.ctrlKey && e.key.toLowerCase() === 'c') {
-    e.preventDefault();
-  }
-  // Cegah Ctrl+V (Paste)
-  if (e.ctrlKey && e.key.toLowerCase() === 'v') {
-    e.preventDefault();
-  }
-});
+        document.addEventListener('keydown', function(e) {
+            if (
+                e.key === 'F12' || // DevTools
+                (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
+                (e.ctrlKey && e.key.toLowerCase() === 'u') // Ctrl+U (view source)
+            ) {
+                e.preventDefault();
+            }
+        });
+        document.addEventListener('keydown', function(e) {
+            // Cegah Ctrl+C (Copy)
+            if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+                e.preventDefault();
+            }
+            // Cegah Ctrl+V (Paste)
+            if (e.ctrlKey && e.key.toLowerCase() === 'v') {
+                e.preventDefault();
+            }
+        });
 
-// Tambahan untuk event copy dan paste untuk jaga-jaga
-document.addEventListener('copy', function(e) {
-  e.preventDefault();
-});
-document.addEventListener('paste', function(e) {
-  e.preventDefault();
-});
-// Fungsi tampilkan peringatan di halaman
-function tampilkanPeringatan(msg) {
-  let peringatan = document.getElementById('peringatan-keamanan');
-  if (!peringatan) {
-    peringatan = document.createElement('div');
-    peringatan.id = 'peringatan-keamanan';
-    peringatan.style.position = 'fixed';
-    peringatan.style.top = '10px';
-    peringatan.style.right = '10px';
-    peringatan.style.backgroundColor = 'rgba(63, 63, 63, 0.8)';
-    peringatan.style.color = 'white';
-    peringatan.style.padding = '10px 20px';
-    peringatan.style.borderRadius = '5px';
-    peringatan.style.zIndex = '9999';
-    peringatan.style.fontWeight = 'bold';
-    peringatan.style.fontSize = '12px';
-    document.body.appendChild(peringatan);
-  }
-  peringatan.innerHTML = `<i class="fa fa-exclamation-circle"></i> ${msg}`;
-  // Hilangkan peringatan setelah 5 detik
-  setTimeout(() => {
-    if (peringatan) peringatan.remove();
-  }, 3000);
-}
+        // Tambahan untuk event copy dan paste untuk jaga-jaga
+        document.addEventListener('copy', function(e) {
+            e.preventDefault();
+        });
+        document.addEventListener('paste', function(e) {
+            e.preventDefault();
+        });
+        // Fungsi tampilkan peringatan di halaman
+        function tampilkanPeringatan(msg) {
+            let peringatan = document.getElementById('peringatan-keamanan');
+            if (!peringatan) {
+                peringatan = document.createElement('div');
+                peringatan.id = 'peringatan-keamanan';
+                peringatan.style.position = 'fixed';
+                peringatan.style.top = '10px';
+                peringatan.style.right = '10px';
+                peringatan.style.backgroundColor = 'rgba(63, 63, 63, 0.8)';
+                peringatan.style.color = 'white';
+                peringatan.style.padding = '10px 20px';
+                peringatan.style.borderRadius = '5px';
+                peringatan.style.zIndex = '9999';
+                peringatan.style.fontWeight = 'bold';
+                peringatan.style.fontSize = '12px';
+                document.body.appendChild(peringatan);
+            }
+            peringatan.innerHTML = `<i class="fa fa-exclamation-circle"></i> ${msg}`;
+            // Hilangkan peringatan setelah 5 detik
+            setTimeout(() => {
+                if (peringatan) peringatan.remove();
+            }, 3000);
+        }
 
-// Cegah klik kanan
-document.addEventListener('contextmenu', function(e) {
-  e.preventDefault();
-  tampilkanPeringatan('Klik kanan dilarang saat ujian!');
-});
+        // Cegah klik kanan
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            tampilkanPeringatan('Klik kanan dilarang saat ujian!');
+        });
 
-// Cegah Ctrl+C, Ctrl+V, Ctrl+U, F12, Ctrl+Shift+I/J
-document.addEventListener('keydown', function(e) {
-  if (
-    e.key === 'F12' ||
-    (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) ||
-    (e.ctrlKey && e.key.toLowerCase() === 'u') ||
-    (e.ctrlKey && e.key.toLowerCase() === 'c') ||
-    (e.ctrlKey && e.key.toLowerCase() === 'v')
-  ) {
-    e.preventDefault();
-    tampilkanPeringatan('Shortcut keyboard dilarang saat ujian!');
-  }
-});
+        // Cegah Ctrl+C, Ctrl+V, Ctrl+U, F12, Ctrl+Shift+I/J
+        document.addEventListener('keydown', function(e) {
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) ||
+                (e.ctrlKey && e.key.toLowerCase() === 'u') ||
+                (e.ctrlKey && e.key.toLowerCase() === 'c') ||
+                (e.ctrlKey && e.key.toLowerCase() === 'v')
+            ) {
+                e.preventDefault();
+                tampilkanPeringatan('Shortcut keyboard dilarang saat ujian!');
+            }
+        });
 
-// Deteksi pindah tab/window
-document.addEventListener('visibilitychange', function() {
-  if (document.hidden) {
-    tampilkanPeringatan('Jangan pindah tab saat ujian berlangsung!');
-    // Bisa juga kirim sinyal ke server untuk catat pelanggaran
-  }
-});
-
+        // Deteksi pindah tab/window
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                tampilkanPeringatan('Jangan pindah tab saat ujian berlangsung!');
+                // Bisa juga kirim sinyal ke server untuk catat pelanggaran
+            }
+        });
     </script>
 </body>
 
