@@ -14,7 +14,9 @@ if (isset($_POST['submit'])) {
     $username = htmlspecialchars($_POST['username']);
     $password = $_POST['password'];
     $kelas = htmlspecialchars($_POST['kelas']);
-    $rombel = htmlspecialchars($_POST['rombel']);
+
+    // rombel OPTIONAL
+    $rombel = isset($_POST['rombel']) ? htmlspecialchars($_POST['rombel']) : '';
 
     // Cek apakah username sudah ada
     $cek = mysqli_query($koneksi, "SELECT * FROM siswa WHERE username = '$username'");
@@ -85,7 +87,7 @@ if (isset($_POST['submit'])) {
                                             </div>
                                             <div class="mb-3 col-sm-6">
                                                 <label class="form-label">Rombel</label>
-                                                <input type="text" name="rombel" class="form-control" required>
+                                                <input type="text" name="rombel" class="form-control">
                                             </div>
                                         </div>
                                         <button type="submit" name="submit" class="btn btn-success">
