@@ -10,42 +10,44 @@ $cek = mysqli_query($koneksi, "SELECT sembunyikan_nilai FROM pengaturan LIMIT 1"
 $row_cek = mysqli_fetch_assoc($cek);
 $sembunyikan_nilai = (int) $row_cek['sembunyikan_nilai'];
 
-// Ambil hasil ujian siswa
+// Ambil hasil ujian siswa, join dengan jawaban_siswa untuk jenis_ujian
 $query = mysqli_query($koneksi, "
     SELECT 
+        n.id_siswa,
         n.kode_soal,
         s.mapel,
         n.nilai, n.nilai_uraian,
         n.tanggal_ujian,
-        m.nama_siswa
+        m.nama_siswa,
+        j.jenis_ujian
     FROM nilai n
     JOIN soal s ON n.kode_soal = s.kode_soal
     JOIN siswa m ON n.id_siswa = m.id_siswa
+    LEFT JOIN jawaban_siswa j ON n.id_siswa = j.id_siswa AND n.kode_soal = j.kode_soal
     WHERE n.id_siswa = '$id_siswa'
     ORDER BY n.tanggal_ujian DESC
 ");
 
 $data = [];
 while ($row = mysqli_fetch_assoc($query)) {
-    $nilai_otomatis=$row['nilai'];
-    $nilai_uraian=$row['nilai_uraian'];
-    $nilai_akhir=$nilai_otomatis+$nilai_uraian;
-    $nilai_display = $sembunyikan_nilai ? '-' : $nilai_akhir;
-    
+    $nilai_otomatis = $row['nilai'];
+    $nilai_uraian   = $row['nilai_uraian'];
+    $nilai_akhir    = $nilai_otomatis + $nilai_uraian;
+    $nilai_display  = $sembunyikan_nilai ? '-' : $nilai_akhir;
 
-   
-        $aksi = '<a class="btn btn-outline-secondary" href="preview_hasil.php?id_siswa=' . $id_siswa . '&kode_soal=' . $row['kode_soal'] . '">
-                    <i class="fa fa-eye"></i> Preview Nilai
-                 </a>';
- 
+    // jenis ujian: value + label
+    $jenis_value = ($row['jenis_ujian'] == 1) ? 'susulan' : 'utama';
+    $jenis_label = ($row['jenis_ujian'] == 1) ? 'Susulan' : 'Utama';
 
     $data[] = [
-        'nama_siswa' => $row['nama_siswa'],
-        'kode_soal' => $row['kode_soal'],
-        'mapel' => $row['mapel'],
-    'nilai' => $nilai_display,
-        'tanggal_ujian' => date('d M Y, H:i', strtotime($row['tanggal_ujian'])),
-        'aksi' => $aksi
+        'id_siswa'           => $row['id_siswa'],
+        'nama_siswa'         => $row['nama_siswa'],
+        'kode_soal'          => $row['kode_soal'],
+        'mapel'              => $row['mapel'],
+        'jenis_ujian'        => $jenis_label,           // for display
+        'jenis_ujian_value'  => $jenis_value,           // for logic / URL
+        'nilai'              => $nilai_display,
+        'tanggal_ujian'      => date('d M Y, H:i', strtotime($row['tanggal_ujian']))
     ];
 }
 
