@@ -60,28 +60,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </tr>
                 </thead>
                 <tbody>';
-        
+
         $no = 1;
         while ($row = mysqli_fetch_assoc($result)) {
             // Tombol Aksi
             $hapusBtn = "<button class='btn btn-sm btn-danger btnHapus' data-id='{$row['id_nilai']}'>
                             <i class='fa fa-close'></i> Hapus
                          </button>";
-            
+
             $prevBtn = "<a href='preview_siswa.php?id_siswa={$row['id_siswa']}&kode_soal={$row['kode_soal']}' 
                           class='btn btn-sm btn-secondary'>
                           <i class='fa fa-eye'></i> Preview
                        </a>";
-            
+
             $koreksiBtn = '';
             if ($row['status_penilaian'] === 'perlu_dinilai') {
                 $btnClass = ($row['nilai_uraian'] <= 0) ? 'outline-danger' : 'outline-info';
                 $koreksiBtn = "<button class='btn btn-sm btn-{$btnClass} btnKoreksi' 
                                   data-id_siswa='{$row['id_siswa']}' 
                                   data-kode_soal='{$row['kode_soal']}'>
-                                  <i class='fa fa-edit'></i> " . 
-                                  (($row['nilai_uraian'] <= 0) ? 'Belum' : 'Sudah') . 
-                               "</button>";
+                                  <i class='fa fa-edit'></i> " .
+                    (($row['nilai_uraian'] <= 0) ? 'Belum' : 'Sudah') .
+                    "</button>";
             }
 
             // Format Nilai
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   </tr>";
             $no++;
         }
-        
+
         echo '</tbody></table>';
     } else {
         echo '<div class="alert alert-primary alert-dismissible fade show col-12" role="alert">
@@ -122,6 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -133,12 +134,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: bold;
             color: #333;
         }
+
         .table-wrapper {
             max-height: 70vh;
             overflow-y: auto;
         }
     </style>
 </head>
+
 <body>
     <div class="wrapper">
         <?php include 'sidebar.php'; ?>
@@ -213,128 +216,148 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <?php include '../inc/js.php'; ?>
     <script>
-    $(document).ready(function() {
-        let delayTimer;
-        
-        // Live Search
-        $('#nama_siswa').on('input', function() {
-            clearTimeout(delayTimer);
-            delayTimer = setTimeout(() => $('#filterForm').submit(), 500);
-        });
+        $(document).ready(function() {
+            let delayTimer;
 
-        // Auto Submit on Filter Change
-        $('#kelas_rombel, #kode_soal').on('change', function() {
-            $('#filterForm').submit();
-        });
-
-        // Handle Form Submit
-        $('#filterForm').on('submit', function(e) {
-            e.preventDefault();
-            $.ajax({
-                url: '',
-                type: 'POST',
-                data: $(this).serialize(),
-                beforeSend: () => $('#nilaiTable').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>'),
-                success: function(response) {
-                    $('#nilaiTable').html(response);
-                    initDataTable();
-                },
-                error: () => Swal.fire('Error', 'Gagal memuat data', 'error')
+            // Live Search
+            $('#nama_siswa').on('input', function() {
+                clearTimeout(delayTimer);
+                delayTimer = setTimeout(() => $('#filterForm').submit(), 500);
             });
-        });
 
-        // Initialize DataTable
-        function initDataTable() {
-            if ($.fn.DataTable.isDataTable('#nilaiTableData')) {
-                $('#nilaiTableData').DataTable().destroy();
+            // Auto Submit on Filter Change
+            $('#kelas_rombel, #kode_soal').on('change', function() {
+                $('#filterForm').submit();
+            });
+
+            // Handle Form Submit
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    beforeSend: () => $('#nilaiTable').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>'),
+                    success: function(response) {
+                        $('#nilaiTable').html(response);
+                        initDataTable();
+                    },
+                    error: () => Swal.fire('Error', 'Gagal memuat data', 'error')
+                });
+            });
+
+            // Initialize DataTable
+            function initDataTable() {
+                if ($.fn.DataTable.isDataTable('#nilaiTableData')) {
+                    $('#nilaiTableData').DataTable().destroy();
+                }
+
+                $('#nilaiTableData').DataTable({
+                    dom: '<"row"<"col-sm-12 col-md-6"B><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"l><"col-sm-12 col-md-7 text-end"p>>',
+                    buttons: [
+                        'copy', 'excel',
+                        {
+                            extend: 'pdf',
+                            text: 'PDF',
+                            title: 'Laporan Nilai Ujian'
+                        },
+                        'print'
+                    ],
+                    responsive: true,
+                    order: [
+                        [8, 'desc']
+                    ],
+                    columnDefs: [{
+                            targets: 0,
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            targets: -1,
+                            orderable: false,
+                            searchable: false
+                        }
+                    ],
+                    lengthMenu: [
+                        [10, 25, 50, 100, -1],
+                        [10, 25, 50, 100, "Semua"]
+                    ],
+                    language: {
+                        decimal: ",",
+                        thousands: ".",
+                        lengthMenu: "Tampilkan _MENU_ data",
+                        search: "Cari:",
+                        zeroRecords: "Data tidak ditemukan",
+                        info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                        infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                        infoFiltered: "(disaring dari _MAX_ total data)",
+                    },
+                    drawCallback: function(settings) {
+                        var api = this.api();
+                        api.column(0, {
+                            search: 'applied',
+                            order: 'applied'
+                        }).nodes().each(function(cell, i) {
+                            cell.innerHTML = i + 1;
+                        });
+                    }
+                });
             }
 
-            $('#nilaiTableData').DataTable({
-                dom: '<"row"<"col-sm-12 col-md-6"B><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"l><"col-sm-12 col-md-7 text-end"p>>',
-                buttons: [
-                    'copy', 'excel', 
-                    {
-                        extend: 'pdf',
-                        text: 'PDF',
-                        title: 'Laporan Nilai Ujian'
-                    },
-                    'print'
-                ],
-                responsive: true,
-                order: [[8, 'desc']],
-                columnDefs: [
-                    { targets: 0, orderable: false, searchable: false },
-                    { targets: -1, orderable: false, searchable: false }
-                ],
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]],
-                language: {
-                    decimal: ",",
-                    thousands: ".",
-                    lengthMenu: "Tampilkan _MENU_ data",
-                    search: "Cari:",
-                    zeroRecords: "Data tidak ditemukan",
-                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
-                    infoFiltered: "(disaring dari _MAX_ total data)",
-                },
-                drawCallback: function(settings) {
-                    var api = this.api();
-                    api.column(0, {search: 'applied', order: 'applied'}).nodes().each(function(cell, i) {
-                        cell.innerHTML = i + 1;
-                    });
-                }
-            });
-        }
 
-
-        // Reset Filter
-        window.resetFilter = () => {
-            $('#filterForm')[0].reset();
-            $('#filterForm').submit();
-        }
-
-        // Delete Handler
-        $(document).on('click', '.btnHapus', function() {
-            const id = $(this).data('id');
-            Swal.fire({
-                title: 'Hapus Data?',
-                text: "Data nilai akan dihapus permanen!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Hapus!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.post('hapus_nilai.php', {id_nilai: id}, () => {
-                        Swal.fire('Sukses!', 'Data berhasil dihapus', 'success');
-                        $('#filterForm').submit();
-                    }).fail(() => Swal.fire('Error', 'Gagal menghapus data', 'error'));
-                }
-            });
-        });
-
-        // Koreksi Uraian Handler
-        $(document).on('click', '.btnKoreksi', function() {
-            const id_siswa = $(this).data('id_siswa');
-            const kode_soal = $(this).data('kode_soal');
-            
-            $('#koreksiContent').html('<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>');
-            $('#modalKoreksiUraian').modal('show');
-            
-            $.post('koreksi_uraian.php', {id_siswa, kode_soal}, (res) => {
-                $('#koreksiContent').html(res);
-            }).fail(() => $('#koreksiContent').html('<div class="alert alert-danger">Gagal memuat data</div>'));
-        });
-
-        // Submit Koreksi
-        $('#formKoreksiUraian').on('submit', function(e) {
-            e.preventDefault();
-            $.post('simpan_nilai_uraian.php', $(this).serialize(), (res) => {
-                Swal.fire('Sukses!', 'Nilai berhasil disimpan', 'success');
-                $('#modalKoreksiUraian').modal('hide');
+            // Reset Filter
+            window.resetFilter = () => {
+                $('#filterForm')[0].reset();
                 $('#filterForm').submit();
-            }).fail(() => Swal.fire('Error', 'Gagal menyimpan nilai', 'error'));
+            }
+
+            // Delete Handler
+            $(document).on('click', '.btnHapus', function() {
+                const id = $(this).data('id');
+                Swal.fire({
+                    title: 'Hapus Data?',
+                    text: "Data nilai akan dihapus permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hapus!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('hapus_nilai.php', {
+                            id_nilai: id
+                        }, () => {
+                            Swal.fire('Sukses!', 'Data berhasil dihapus', 'success');
+                            $('#filterForm').submit();
+                        }).fail(() => Swal.fire('Error', 'Gagal menghapus data', 'error'));
+                    }
+                });
+            });
+
+            // Koreksi Uraian Handler
+            $(document).on('click', '.btnKoreksi', function() {
+                const id_siswa = $(this).data('id_siswa');
+                const kode_soal = $(this).data('kode_soal');
+
+                $('#koreksiContent').html('<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>');
+                $('#modalKoreksiUraian').modal('show');
+
+                $.post('koreksi_uraian.php', {
+                    id_siswa,
+                    kode_soal
+                }, (res) => {
+                    $('#koreksiContent').html(res);
+                }).fail(() => $('#koreksiContent').html('<div class="alert alert-danger">Gagal memuat data</div>'));
+            });
+
+            // Submit Koreksi
+            $('#formKoreksiUraian').on('submit', function(e) {
+                e.preventDefault();
+                $.post('simpan_nilai_uraian.php', $(this).serialize(), (res) => {
+                    Swal.fire('Sukses!', 'Nilai berhasil disimpan', 'success');
+                    $('#modalKoreksiUraian').modal('hide');
+                    $('#filterForm').submit();
+                }).fail(() => Swal.fire('Error', 'Gagal menyimpan nilai', 'error'));
+            });
         });
-    });
     </script>
 
     <!-- Modal Koreksi -->
@@ -359,4 +382,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
 </body>
+
 </html>
