@@ -152,12 +152,24 @@ if ($w = mysqli_fetch_assoc($get_waktu)) {
     }
 }
 
-$stmt = $koneksi->prepare("UPDATE jawaban_siswa SET status_ujian = 'Aktif' WHERE id_siswa = ? AND kode_soal = ?");
+// Tentukan jenis ujian (0 = utama, 1 = susulan)
+$jenis_ujian = $is_ujian_susulan ? 1 : 0;
+
+// Update status ujian + simpan jenis ujian
+$stmt = $koneksi->prepare("
+    UPDATE jawaban_siswa 
+    SET status_ujian = 'Aktif',
+        jenis_ujian = ?
+    WHERE id_siswa = ? 
+      AND kode_soal = ?
+");
+
 if (!$stmt) {
     die("Prepare gagal: " . $koneksi->error);
 }
 
-$stmt->bind_param("ss", $id_siswa, $kode_soal);
+$stmt->bind_param("iss", $jenis_ujian, $id_siswa, $kode_soal);
+
 if (!$stmt->execute()) {
     die("Eksekusi gagal: " . $stmt->error);
 }

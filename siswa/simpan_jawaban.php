@@ -4,7 +4,8 @@ include '../koneksi/koneksi.php';
 include '../inc/datasiswa.php'; // pastikan ada $id_siswa dan $nama_siswa
 
 
-function allBenarSalah($arr) {
+function allBenarSalah($arr)
+{
     if (!is_array($arr)) return false;
     foreach ($arr as $v) {
         $v = strtolower(trim($v));
@@ -18,6 +19,9 @@ $kode_soal = mysqli_real_escape_string($koneksi, $_POST['kode_soal'] ?? '');
 $waktu_sisa = round(((int)($_POST['waktu_sisa'] ?? 0)) / 60);
 $jawaban = $_POST['jawaban'] ?? [];
 $soal_kiri = $_POST['soal_kiri'] ?? [];
+
+// Ambil jenis ujian (0 = utama, 1 = susulan)
+$jenis_ujian = isset($_POST['is_ujian_susulan']) ? (int)$_POST['is_ujian_susulan'] : 0;
 
 if (!$kode_soal || empty($jawaban)) {
     $_SESSION['warning_message'] = 'Kode soal Tidak Tersedia';
@@ -61,18 +65,43 @@ if (empty($final_jawaban)) {
     die(json_encode(['status' => 'error', 'message' => 'Tidak ada jawaban valid']));
 }
 
-// Simpan jawaban siswa
-$sql = "INSERT INTO jawaban_siswa (id_siswa, kode_soal, jawaban_siswa, waktu_sisa, nama_siswa, status_ujian)
-        VALUES (?, ?, ?, ?, ?, 'Aktif')
+// Simpan jawaban siswa + jenis ujian
+$sql = "INSERT INTO jawaban_siswa 
+        (id_siswa, kode_soal, jawaban_siswa, waktu_sisa, nama_siswa, jenis_ujian, status_ujian)
+        VALUES (?, ?, ?, ?, ?, ?, 'Aktif')
         ON DUPLICATE KEY UPDATE 
             jawaban_siswa = VALUES(jawaban_siswa),
-            waktu_sisa = VALUES(waktu_sisa),
-            nama_siswa = VALUES(nama_siswa),
-            status_ujian = 'Aktif'";
+            waktu_sisa     = VALUES(waktu_sisa),
+            nama_siswa     = VALUES(nama_siswa),
+            jenis_ujian    = VALUES(jenis_ujian),
+            status_ujian   = 'Aktif'";
+
 $stmt = mysqli_prepare($koneksi, $sql);
-if (!$stmt) die(json_encode(['status' => 'error', 'message' => 'Prepare simpan jawaban gagal: ' . mysqli_error($koneksi)]));
-mysqli_stmt_bind_param($stmt, "sssis", $id_siswa, $kode_soal, $final_jawaban, $waktu_sisa, $nama_siswa);
-if (!mysqli_stmt_execute($stmt)) die(json_encode(['status' => 'error', 'message' => 'Execute simpan jawaban gagal: ' . mysqli_error($koneksi)]));
+if (!$stmt) {
+    die(json_encode([
+        'status' => 'error',
+        'message' => 'Prepare simpan jawaban gagal: ' . mysqli_error($koneksi)
+    ]));
+}
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "sssisi",
+    $id_siswa,
+    $kode_soal,
+    $final_jawaban,
+    $waktu_sisa,
+    $nama_siswa,
+    $jenis_ujian
+);
+
+if (!mysqli_stmt_execute($stmt)) {
+    die(json_encode([
+        'status' => 'error',
+        'message' => 'Execute simpan jawaban gagal: ' . mysqli_error($koneksi)
+    ]));
+}
+
 mysqli_stmt_close($stmt);
 
 // Update last_activity siswa
@@ -91,7 +120,8 @@ $kunci_jawaban = $data_soal['kunci'] ?? '';
 if (empty($kunci_jawaban)) die(json_encode(['status' => 'error', 'message' => 'Kunci jawaban kosong']));
 
 // Fungsi hapus koma di luar tanda []
-function removeCommasOutsideBrackets($str) {
+function removeCommasOutsideBrackets($str)
+{
     $result = '';
     $in_brackets = false;
     for ($i = 0; $i < strlen($str); $i++) {
@@ -158,7 +188,6 @@ for ($i = 0; $i < $total_soal; $i++) {
         if ($jumlah_benar == $jumlah_kunci) $benar++;
         elseif ($jumlah_benar == 0) $salah++;
         else $kurang_lengkap++;
-
     } elseif ($tipe_soal === 'pilihan ganda kompleks') {
         $kunci_opsi = array_map('strtolower', array_map('trim', explode(',', str_replace('|', ',', $isi_kunci))));
         $jawaban_opsi = array_map('strtolower', array_map('trim', explode(',', str_replace('|', ',', $isi_jawaban))));
@@ -187,9 +216,7 @@ for ($i = 0; $i < $total_soal; $i++) {
             $kurang_lengkap++;
         }
 
-        selesai_pilgan_kompleks:
-        ;
-
+        selesai_pilgan_kompleks:;
     } else {
         // PG tunggal atau uraian
         if ($tipe_soal === 'uraian') {
@@ -259,11 +286,16 @@ if (!$stmt) {
     <title>Simpan Jawaban</title>
     <?php include '../inc/css.php'; ?>
     <style>
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-</style>
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -279,7 +311,7 @@ if (!$stmt) {
     font-family: Arial, sans-serif;
     color: #333;
 ">
-    <div class="loader" style="
+        <div class="loader" style="
         border: 5px solid #f3f3f3;
         border-top: 5px solid #3498db;
         border-radius: 50%;
@@ -288,32 +320,32 @@ if (!$stmt) {
         animation: spin 1s linear infinite;
         margin-bottom: 20px;
     "></div>
-    <p style="font-size: 18px;">Menghubungi server pusat...</p>
-    <p style="font-size: 16px;">Menyimpan data ke server pusat</p>
-</div>
+        <p style="font-size: 18px;">Menghubungi server pusat...</p>
+        <p style="font-size: 16px;">Menyimpan data ke server pusat</p>
+    </div>
     <script src="../assets/adminkit/static/js/app.js"></script>
     <script src="../assets/js/jquery-3.6.0.min.js"></script>
     <script src="../assets/js/sweetalert.js"></script>
     <script src="../assets/datatables/datatables.js"></script>
     <?php include '../inc/check_activity.php'; ?>
     <script>
-    // Tampilkan animasi loading selama 2 detik, lalu munculkan SweetAlert
-    $(document).ready(function() {
-        setTimeout(function() {
-            // Sembunyikan loading overlay
-            $('#loadingOverlay').fadeOut(500, function() {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Jawaban sudah tersimpan',
-                    showConfirmButton: false,
-                    timer: 2000
-                }).then(() => {
-                    window.location.href = 'dashboard.php';
+        // Tampilkan animasi loading selama 2 detik, lalu munculkan SweetAlert
+        $(document).ready(function() {
+            setTimeout(function() {
+                // Sembunyikan loading overlay
+                $('#loadingOverlay').fadeOut(500, function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Jawaban sudah tersimpan',
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(() => {
+                        window.location.href = 'dashboard.php';
+                    });
                 });
-            });
-        }, 2000); // Waktu delay animasi 2 detik
-    });
-</script>
+            }, 2000); // Waktu delay animasi 2 detik
+        });
+    </script>
 
 </body>
 
