@@ -11,11 +11,19 @@ if (!isset($_GET['kode_soal'])) {
 }
 
 $kode_soal = $_GET['kode_soal'];
+
+// Tambah parameter filter jenis ujian jika ada
+$filter_jenis_ujian = isset($_GET['jenis_ujian']) ? $_GET['jenis_ujian'] : '';
+$filter_sql = "";
+if ($filter_jenis_ujian !== '') {
+    $filter_sql = " AND jenis_ujian = '" . mysqli_real_escape_string($koneksi, $filter_jenis_ujian) . "'";
+}
+
 // Ambil data soal
 $query_soal = mysqli_query($koneksi, "SELECT * FROM soal WHERE kode_soal='$kode_soal'");
 $data_soal = mysqli_fetch_assoc($query_soal);
 if ($data_soal['status'] == 'Aktif') {
-        $_SESSION['warning_message'] = "Soal ini sudah aktif dan tidak bisa diedit!.";
+    $_SESSION['warning_message'] = "Soal ini sudah aktif dan tidak bisa diedit!.";
     header('Location: soal.php');
     exit();
 }
@@ -30,41 +38,41 @@ if ($data_soal['status'] == 'Aktif') {
     <?php include '../inc/css.php'; ?>
     <link href="../assets/summernote/summernote-bs5.css" rel="stylesheet">
     <style>
-    .table-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
 
-    .dataTables_paginate {
-        display: block;
-        text-align: center;
-        margin-top: 10px;
-    }
+        .dataTables_paginate {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+        }
 
-    .dataTables_paginate .paginate_button {
-        padding: 5px 10px;
-        margin: 0 5px;
-        background-color: #f4f4f4;
-        border: 1px solid #ddd;
-        cursor: pointer;
-    }
+        .dataTables_paginate .paginate_button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
 
-    .dataTables_paginate .paginate_button:hover {
-        background-color: #007bff;
-        color: white;
-    }
+        .dataTables_paginate .paginate_button:hover {
+            background-color: #007bff;
+            color: white;
+        }
 
-    table img {
-        max-width: 150px;
-        max-height: 150px;
-        height: auto;
-        object-fit: contain;
-    }
+        table img {
+            max-width: 150px;
+            max-height: 150px;
+            height: auto;
+            object-fit: contain;
+        }
 
-    table th,
-    table td {
-        text-align: left !important;
-    }
+        table th,
+        table td {
+            text-align: left !important;
+        }
     </style>
 </head>
 
@@ -87,58 +95,79 @@ if ($data_soal['status'] == 'Aktif') {
                                     <h2 class=""><strong>Kode Soal:
                                             <?= htmlspecialchars($data_soal['kode_soal']) ?></strong></h2>
                                     <?php
-                                $query_butir = mysqli_query($koneksi, "SELECT * FROM butir_soal WHERE kode_soal='$kode_soal' ORDER BY id_soal ASC");
-                                $jumlah_pg = 0;
-                                $jumlah_pg_kompleks = 0;
-                                $jumlah_benar_salah = 0;
-                                $jumlah_menjodohkan = 0;
-                                $jumlah_uraian = 0;
-                                while ($data = mysqli_fetch_assoc($query_butir)) {
-                                    switch ($data['tipe_soal']) {
-                                        case 'Pilihan Ganda':
-                                            $jumlah_pg++;
-                                            break;
-                                        case 'Pilihan Ganda Kompleks':
-                                            $jumlah_pg_kompleks++;
-                                            break;
-                                        case 'Benar/Salah':
-                                            $jumlah_benar_salah++;
-                                            break;
-                                        case 'Menjodohkan':
-                                            $jumlah_menjodohkan++;
-                                            break;
-                                        case 'Uraian':
-                                            $jumlah_uraian++;
-                                            break;
+                                    $query_butir = mysqli_query($koneksi, "SELECT * FROM butir_soal WHERE kode_soal='$kode_soal' $filter_sql ORDER BY id_soal ASC");
+                                    $jumlah_pg = 0;
+                                    $jumlah_pg_kompleks = 0;
+                                    $jumlah_benar_salah = 0;
+                                    $jumlah_menjodohkan = 0;
+                                    $jumlah_uraian = 0;
+                                    while ($data = mysqli_fetch_assoc($query_butir)) {
+                                        switch ($data['tipe_soal']) {
+                                            case 'Pilihan Ganda':
+                                                $jumlah_pg++;
+                                                break;
+                                            case 'Pilihan Ganda Kompleks':
+                                                $jumlah_pg_kompleks++;
+                                                break;
+                                            case 'Benar/Salah':
+                                                $jumlah_benar_salah++;
+                                                break;
+                                            case 'Menjodohkan':
+                                                $jumlah_menjodohkan++;
+                                                break;
+                                            case 'Uraian':
+                                                $jumlah_uraian++;
+                                                break;
+                                        }
                                     }
-                                }
-                                echo "<p>PG: " . $jumlah_pg . " | PGX: " . $jumlah_pg_kompleks . " | BS: " . $jumlah_benar_salah . " | MJD: " . $jumlah_menjodohkan . " | U: " . $jumlah_uraian . " <p>";
-                                ?>
+                                    echo "<p>PG: " . $jumlah_pg . " | PGX: " . $jumlah_pg_kompleks . " | BS: " . $jumlah_benar_salah . " | MJD: " . $jumlah_menjodohkan . " | U: " . $jumlah_uraian . " <p>";
+                                    ?>
+                                    <!-- Filter Jenis Ujian -->
+                                    <div class="mb-3">
+                                        <form method="GET" action="" class="row g-3 align-items-center">
+                                            <input type="hidden" name="kode_soal" value="<?= htmlspecialchars($kode_soal) ?>">
+                                            <div class="col-auto">
+                                                <label for="jenis_ujian" class="form-label">Filter Jenis Ujian:</label>
+                                            </div>
+                                            <div class="col-auto">
+                                                <select name="jenis_ujian" id="jenis_ujian" class="form-select" onchange="this.form.submit()">
+                                                    <option value="">Semua</option>
+                                                    <option value="0" <?= ($filter_jenis_ujian === '0') ? 'selected' : '' ?>>Ujian Utama</option>
+                                                    <option value="1" <?= ($filter_jenis_ujian === '1') ? 'selected' : '' ?>>Ujian Susulan</option>
+                                                </select>
+                                            </div>
+                                            <?php if ($filter_jenis_ujian !== ''): ?>
+                                                <div class="col-auto">
+                                                    <a href="?kode_soal=<?= htmlspecialchars($kode_soal) ?>" class="btn btn-outline-secondary">Hapus Filter</a>
+                                                </div>
+                                            <?php endif; ?>
+                                        </form>
+                                    </div>
                                     <div class="table-wrapper">
                                         <?php
-                                $kode_soal = mysqli_real_escape_string($koneksi, $_GET['kode_soal']);
+                                        $kode_soal = mysqli_real_escape_string($koneksi, $_GET['kode_soal']);
 
-                                // Cari nomor yang hilang dulu
-                                $query_gap = mysqli_query($koneksi, "
+                                        // Cari nomor yang hilang dulu
+                                        $query_gap = mysqli_query($koneksi, "
                                     SELECT MIN(t1.nomer_soal + 1) AS nomor_lompatan
                                     FROM butir_soal t1
                                     LEFT JOIN butir_soal t2 
                                         ON t2.nomer_soal = t1.nomer_soal + 1 AND t2.kode_soal = '$kode_soal'
                                     WHERE t1.kode_soal = '$kode_soal' AND t2.nomer_soal IS NULL
                                 ");
-                                
-                                $data_gap = mysqli_fetch_assoc($query_gap);
-                                $nomor_baru = $data_gap['nomor_lompatan'];
-                                
-                                // Jika tidak ada gap (misalnya hasilnya NULL), ambil MAX + 1
-                                if (!$nomor_baru) {
-                                    $query_last = mysqli_query($koneksi, "SELECT MAX(nomer_soal) AS nomor_terakhir FROM butir_soal WHERE kode_soal = '$kode_soal'");
-                                    $data = mysqli_fetch_assoc($query_last);
-                                    $nomor_terakhir = $data['nomor_terakhir'] ?? 0;
-                                    $nomor_baru = $nomor_terakhir + 1;
-                                }
-                                
-                                ?>
+
+                                        $data_gap = mysqli_fetch_assoc($query_gap);
+                                        $nomor_baru = $data_gap['nomor_lompatan'];
+
+                                        // Jika tidak ada gap (misalnya hasilnya NULL), ambil MAX + 1
+                                        if (!$nomor_baru) {
+                                            $query_last = mysqli_query($koneksi, "SELECT MAX(nomer_soal) AS nomor_terakhir FROM butir_soal WHERE kode_soal = '$kode_soal'");
+                                            $data = mysqli_fetch_assoc($query_last);
+                                            $nomor_terakhir = $data['nomor_terakhir'] ?? 0;
+                                            $nomor_baru = $nomor_terakhir + 1;
+                                        }
+
+                                        ?>
                                         <a href="soal.php" class="btn btn btn-outline-secondary">
                                             <i class="fas fa-arrow-left"></i> Bank Soal
                                         </a>
@@ -180,21 +209,26 @@ if ($data_soal['status'] == 'Aktif') {
                                                     <th>No Soal</th>
                                                     <th>Pertanyaan</th>
                                                     <th>Tipe Soal</th>
+                                                    <th>Jenis Ujian</th> <!-- Kolom baru -->
                                                     <th>Status</th>
                                                     <th>Aksi</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?php
-                                            $query_butir = mysqli_query($koneksi, "SELECT * FROM butir_soal WHERE kode_soal='$kode_soal' ORDER BY id_soal ASC");
-                                            while ($butir = mysqli_fetch_assoc($query_butir)) {
-                                                $json_butir = htmlspecialchars(json_encode($butir), ENT_QUOTES, 'UTF-8');
-                                                echo "<tr>";
-                                                echo "<td>" . htmlspecialchars($butir['nomer_soal']) . "</td>";
-                                                echo "<td>$butir[pertanyaan]</td>";
-                                                echo "<td>" . htmlspecialchars($butir['tipe_soal']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($butir['status_soal']) . "</td>";
-                                                echo "<td>
+                                                $query_butir = mysqli_query($koneksi, "SELECT * FROM butir_soal WHERE kode_soal='$kode_soal' $filter_sql ORDER BY id_soal ASC");
+                                                while ($butir = mysqli_fetch_assoc($query_butir)) {
+                                                    // Konversi nilai jenis_ujian ke teks yang mudah dibaca
+                                                    $jenis_ujian_text = ($butir['jenis_ujian'] == '0') ? 'Ujian Utama' : 'Ujian Susulan';
+                                                    $jenis_ujian_class = ($butir['jenis_ujian'] == '0') ? 'badge bg-primary' : 'badge bg-warning';
+
+                                                    echo "<tr>";
+                                                    echo "<td>" . htmlspecialchars($butir['nomer_soal']) . "</td>";
+                                                    echo "<td>$butir[pertanyaan]</td>";
+                                                    echo "<td>" . htmlspecialchars($butir['tipe_soal']) . "</td>";
+                                                    echo "<td><span class='$jenis_ujian_class'>$jenis_ujian_text</span></td>"; // Kolom jenis ujian
+                                                    echo "<td>" . htmlspecialchars($butir['status_soal']) . "</td>";
+                                                    echo "<td>
                                                         <a href='edit_butir_soal.php?id_soal=" . htmlspecialchars($butir['id_soal']) . "&kode_soal=" . htmlspecialchars($kode_soal) . "' class='btn btn-sm btn-primary'>
                                                             <i class='fas fa-edit'></i> Edit
                                                         </a>
@@ -202,9 +236,9 @@ if ($data_soal['status'] == 'Aktif') {
                                                             <i class='fa fa-close'></i> Hapus
                                                         </button>
                                                       </td>";
-                                                echo "</tr>";
-                                            }
-                                            ?>
+                                                    echo "</tr>";
+                                                }
+                                                ?>
                                             </tbody>
                                         </table>
                                     </div>
@@ -251,117 +285,117 @@ if ($data_soal['status'] == 'Aktif') {
     </div>
     <?php include '../inc/js.php'; ?>
     <script>
-    $(document).ready(function() {
-        $('#butirsoal').DataTable({
-            "paging": true,
-            "searching": true,
-            order: [
-                [0, 'asc']
-            ],
-            "info": true,
-            "lengthChange": true,
-            "autoWidth": false,
-        });
-    });
-
-
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('success') && urlParams.get('success') === '1') {
-            Swal.fire({
-                icon: 'success',
-                title: 'Data berhasil diperbarui!',
-                showConfirmButton: true,
+        $(document).ready(function() {
+            $('#butirsoal').DataTable({
+                "paging": true,
+                "searching": true,
+                order: [
+                    [0, 'asc']
+                ],
+                "info": true,
+                "lengthChange": true,
+                "autoWidth": false,
             });
+        });
 
-            urlParams.delete('success');
-            window.history.replaceState(null, null, window.location.pathname + '?' + urlParams.toString());
+
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('success') && urlParams.get('success') === '1') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Data berhasil diperbarui!',
+                    showConfirmButton: true,
+                });
+
+                urlParams.delete('success');
+                window.history.replaceState(null, null, window.location.pathname + '?' + urlParams.toString());
+            }
         }
-    }
 
-    document.querySelectorAll('.btn-hapus').forEach(function(button) {
-        button.addEventListener('click', function() {
-            const kodeSoal = this.getAttribute('data-kode');
+        document.querySelectorAll('.btn-hapus').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const kodeSoal = this.getAttribute('data-kode');
 
-            Swal.fire({
-                title: 'Yakin ingin menghapus?',
-                text: "Data soal akan dihapus permanen!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, hapus!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = 'hapus_butir_soal.php?id_soal=' + encodeURIComponent(
-                        kodeSoal);
-                }
+                Swal.fire({
+                    title: 'Yakin ingin menghapus?',
+                    text: "Data soal akan dihapus permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, hapus!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'hapus_butir_soal.php?id_soal=' + encodeURIComponent(
+                            kodeSoal);
+                    }
+                });
             });
         });
-    });
     </script>
     <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const formImport = document.querySelector('#modalImportExcel form');
+        document.addEventListener("DOMContentLoaded", function() {
+            const formImport = document.querySelector('#modalImportExcel form');
 
-    if (formImport) {
-        formImport.addEventListener('submit', function(e) {
-            Swal.fire({
-                title: 'Mengimpor...',
-                html: 'Harap tunggu, sistem sedang memproses file.',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+            if (formImport) {
+                formImport.addEventListener('submit', function(e) {
+                    Swal.fire({
+                        title: 'Mengimpor...',
+                        html: 'Harap tunggu, sistem sedang memproses file.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+    <?php
+    if (isset($_SESSION['import_result'])) {
+        $res = $_SESSION['import_result'];
+        unset($_SESSION['import_result']);
+
+        $successCount = $res['successCount'];
+        $failCount = $res['failCount'];
+        $duplicates = $res['duplicates'];
+
+        $pesan = "Import selesai!<br>Berhasil: $successCount<br>Duplikat: $failCount";
+        if ($failCount > 0) {
+            $pesan .= "<br>Soal duplikat:<br>" . implode(", ", $duplicates);
+        }
+    ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Hasil Import',
+                    html: `<?= $pesan ?>`,
+                    confirmButtonText: 'OK'
+                });
             });
-        });
-    }
-});
-</script>
+        </script>
     <?php
-if (isset($_SESSION['import_result'])) {
-    $res = $_SESSION['import_result'];
-    unset($_SESSION['import_result']);
+    }
 
-    $successCount = $res['successCount'];
-    $failCount = $res['failCount'];
-    $duplicates = $res['duplicates'];
-
-    $pesan = "Import selesai!<br>Berhasil: $successCount<br>Duplikat: $failCount";
-    if ($failCount > 0) {
-        $pesan .= "<br>Soal duplikat:<br>" . implode(", ", $duplicates);
+    if (isset($_SESSION['import_error'])) {
+        $error = $_SESSION['import_error'];
+        unset($_SESSION['import_error']);
+    ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Import',
+                    text: '<?= addslashes($error) ?>',
+                    confirmButtonText: 'OK'
+                });
+            });
+        </script>
+    <?php
     }
     ?>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        Swal.fire({
-            icon: 'info',
-            title: 'Hasil Import',
-            html: `<?= $pesan ?>`,
-            confirmButtonText: 'OK'
-        });
-    });
-    </script>
-    <?php
-}
-
-if (isset($_SESSION['import_error'])) {
-    $error = $_SESSION['import_error'];
-    unset($_SESSION['import_error']);
-    ?>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        Swal.fire({
-            icon: 'error',
-            title: 'Gagal Import',
-            text: '<?= addslashes($error) ?>',
-            confirmButtonText: 'OK'
-        });
-    });
-    </script>
-    <?php
-}
-?>
 </body>
 
 </html>
