@@ -147,8 +147,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <main class="content">
                 <div class="container-fluid p-0">
                     <div class="card shadow">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">Daftar Nilai Ujian</h5>
+                            <a href="ranking_saw.php" class="btn btn-primary btn-sm"><i class="fas fa-trophy"></i> Perangkingan SAW</a>
                         </div>
                         <div class="card-body">
                             <form id="filterForm" method="POST" class="row g-3 mb-4 align-items-end">
