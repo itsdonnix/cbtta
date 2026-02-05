@@ -53,14 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $pertanyaan = mysqli_real_escape_string($koneksi, $_POST['pertanyaan']);
     $tipe_soal = mysqli_real_escape_string($koneksi, $_POST['tipe_soal']);
     $nomor_soal = mysqli_real_escape_string($koneksi, $_POST['nomor_soal']);
+    $ujian_susulan = isset($_POST['ujian_susulan']) && $_POST['ujian_susulan'] == 'on' ? 1 : 0;
+
     // Cek duplikat nomor soal kecuali untuk soal itu sendiri
-$cek_duplikat = mysqli_query($koneksi, "SELECT * FROM butir_soal 
+    $cek_duplikat = mysqli_query($koneksi, "SELECT * FROM butir_soal 
 WHERE nomer_soal = '$nomor_soal' 
 AND kode_soal = '$kode_soal' 
 AND id_soal != '$id_soal'");
 
-if (mysqli_num_rows($cek_duplikat) > 0) {
-echo '
+    if (mysqli_num_rows($cek_duplikat) > 0) {
+        echo '
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -81,8 +83,8 @@ echo '
     </script>
 </body>
 </html>';
-exit();
-}
+        exit();
+    }
 
     $query = "";
 
@@ -106,9 +108,8 @@ exit();
                   pilihan_2='$pilihan_2', 
                   pilihan_3='$pilihan_3', 
                   pilihan_4='$pilihan_4', 
-                  jawaban_benar='$jawaban_benar'
-                  WHERE id_soal='$id_soal'";
-
+                  jawaban_benar='$jawaban_benar',
+                  jenis_ujian='$ujian_susulan' WHERE id_soal='$id_soal'";
     } elseif ($tipe_soal == 'Benar/Salah') {
         if (empty($_POST['jawaban_benar'])) {
             die("Harap pilih jawaban benar");
@@ -127,21 +128,20 @@ exit();
                   pilihan_2='$pilihan_2', 
                   pilihan_3='$pilihan_3', 
                   pilihan_4='$pilihan_4', 
-                  jawaban_benar='$jawaban_benar'
-                  WHERE id_soal='$id_soal'";
-
+                  jawaban_benar='$jawaban_benar',
+                  jenis_ujian='$ujian_susulan' WHERE id_soal='$id_soal'";
     } elseif ($tipe_soal == 'Menjodohkan') {
-    $pasangan_data = [];
-    $pasangan_valid = 0;
-    $pasangan_cek = [];
-    $jawaban_cek = [];
+        $pasangan_data = [];
+        $pasangan_valid = 0;
+        $pasangan_cek = [];
+        $jawaban_cek = [];
 
-    foreach ($_POST['pasangan_soal'] as $i => $soal) {
-        $jawaban = $_POST['pasangan_jawaban'][$i];
+        foreach ($_POST['pasangan_soal'] as $i => $soal) {
+            $jawaban = $_POST['pasangan_jawaban'][$i];
 
-        if (!empty($soal) && !empty($jawaban)) {
-            if (trim($soal) === trim($jawaban)) {
-                echo '
+            if (!empty($soal) && !empty($jawaban)) {
+                if (trim($soal) === trim($jawaban)) {
+                    echo '
                 <!DOCTYPE html>
                 <html>
                 <head><script src="../assets/js/sweetalert.js"></script></head>
@@ -158,16 +158,16 @@ exit();
                     </script>
                 </body>
                 </html>';
-                exit;
-            }
+                    exit;
+                }
 
-            $soal_clean = mysqli_real_escape_string($koneksi, trim($soal));
-            $jawaban_clean = mysqli_real_escape_string($koneksi, trim($jawaban));
-            $pasangan_key = $soal_clean . ':' . $jawaban_clean;
+                $soal_clean = mysqli_real_escape_string($koneksi, trim($soal));
+                $jawaban_clean = mysqli_real_escape_string($koneksi, trim($jawaban));
+                $pasangan_key = $soal_clean . ':' . $jawaban_clean;
 
-            // Cek apakah pasangan sudah ada sebelumnya
-            if (in_array($pasangan_key, $pasangan_cek)) {
-                echo '
+                // Cek apakah pasangan sudah ada sebelumnya
+                if (in_array($pasangan_key, $pasangan_cek)) {
+                    echo '
                 <!DOCTYPE html>
                 <html>
                 <head><script src="../assets/js/sweetalert.js"></script></head>
@@ -184,12 +184,12 @@ exit();
                     </script>
                 </body>
                 </html>';
-                exit;
-            }
+                    exit;
+                }
 
-            // Cek apakah jawaban sudah digunakan di pasangan lain
-            if (in_array($jawaban_clean, $jawaban_cek)) {
-                echo '
+                // Cek apakah jawaban sudah digunakan di pasangan lain
+                if (in_array($jawaban_clean, $jawaban_cek)) {
+                    echo '
                 <!DOCTYPE html>
                 <html>
                 <head><script src="../assets/js/sweetalert.js"></script></head>
@@ -206,18 +206,18 @@ exit();
                     </script>
                 </body>
                 </html>';
-                exit;
+                    exit;
+                }
+
+                $pasangan_data[] = "$soal_clean:$jawaban_clean";
+                $pasangan_cek[] = $pasangan_key;
+                $jawaban_cek[] = $jawaban_clean;
+                $pasangan_valid++;
             }
-
-            $pasangan_data[] = "$soal_clean:$jawaban_clean";
-            $pasangan_cek[] = $pasangan_key;
-            $jawaban_cek[] = $jawaban_clean;
-            $pasangan_valid++;
         }
-    }
 
-    if ($pasangan_valid < 2) {
-        echo '
+        if ($pasangan_valid < 2) {
+            echo '
         <!DOCTYPE html>
         <html>
         <head><script src="../assets/js/sweetalert.js"></script></head>
@@ -234,16 +234,18 @@ exit();
             </script>
         </body>
         </html>';
-        exit;
-    }
+            exit;
+        }
 
-    $jawaban_benar = implode("|", $pasangan_data);
+        $jawaban_benar = implode("|", $pasangan_data);
 
-    $query = "INSERT INTO butir_soal (kode_soal, nomer_soal, pertanyaan, tipe_soal,
-              jawaban_benar, status_soal)
-              VALUES ('$kode_soal', '$nomer_soal', '$pertanyaan', '$tipe_soal',
-              '$jawaban_benar', 'Aktif')";
-} elseif ($tipe_soal == 'Uraian') {
+        $query = "UPDATE butir_soal SET 
+                  pertanyaan='$pertanyaan', 
+                  tipe_soal='$tipe_soal',
+                  nomer_soal='$nomor_soal',
+                  jawaban_benar='$jawaban_benar',
+                  jenis_ujian='$ujian_susulan' WHERE id_soal='$id_soal'";
+    } elseif ($tipe_soal == 'Uraian') {
         if (empty($_POST['jawaban_benar'])) {
             die("Harap isi jawaban benar");
         }
@@ -253,8 +255,8 @@ exit();
                   pertanyaan='$pertanyaan', 
                   tipe_soal='$tipe_soal',
                   nomer_soal='$nomor_soal',
-                  jawaban_benar='$jawaban_benar'
-                  WHERE id_soal='$id_soal'";
+                  jawaban_benar='$jawaban_benar',
+                  jenis_ujian='$ujian_susulan' WHERE id_soal='$id_soal'";
     }
 
     if (!empty($query)) {
@@ -270,6 +272,7 @@ exit();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -278,20 +281,27 @@ exit();
     <script src="../assets/js/jquery-3.6.0.min.js"></script>
     <link href="../assets/summernote/summernote-bs5.css" rel="stylesheet">
     <style>
-    .note-editable img {
-    max-width: 400px !important;
-    max-height: 400px !important;
-    height: auto;
-    width: auto;
-}
-        label.note-form-label{display:none;!important}
+        .note-editable img {
+            max-width: 400px !important;
+            max-height: 400px !important;
+            height: auto;
+            width: auto;
+        }
+
+        label.note-form-label {
+            display: none !important;
+        }
+
         .no-click {
-  pointer-events: none;
-  background-color: #e9ecef; /* warna Bootstrap untuk disabled */
-  opacity: 1; /* tetap terlihat normal */
-}
+            pointer-events: none;
+            background-color: #e9ecef;
+            /* warna Bootstrap untuk disabled */
+            opacity: 1;
+            /* tetap terlihat normal */
+        }
     </style>
 </head>
+
 <body>
     <div class="wrapper">
         <?php include 'sidebar.php'; ?>
@@ -330,7 +340,19 @@ exit();
                                             <textarea class="form-control" id="pertanyaan" name="pertanyaan" required><?= htmlspecialchars($butir_soal['pertanyaan']) ?></textarea>
                                             <hr>
                                         </div>
-                                        
+
+                                        <!-- Tambah checkbox untuk jenis ujian -->
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="ujian_susulan" id="ujian_susulan"
+                                                    <?= ($butir_soal['jenis_ujian'] == 1) ? 'checked' : '' ?>>
+                                                <label class="form-check-label" for="ujian_susulan">
+                                                    Apakah ini soal ujian susulan?
+                                                </label>
+                                            </div>
+                                            <hr>
+                                        </div>
+
                                         <!-- Fields for Pilihan Ganda -->
                                         <div id="pilihan-ganda-fields" class="d-none">
                                             <div class="mb-3">
@@ -391,26 +413,26 @@ exit();
                                         <div id="benar-salah-fields" class="d-none">
                                             <label>Pernyataan dan Jawaban</label><br><br>
                                             <div class="form-group">
-                                            <textarea type="text" class="form-control mb-1" id="bs_1" name="pilihan_1" placeholder="Pernyataan 1"><?= htmlspecialchars($butir_soal['pilihan_1']) ?></textarea>
-                                               <label><input type="radio" name="jawaban_benar[0]" value="Benar"> Benar</label>
+                                                <textarea type="text" class="form-control mb-1" id="bs_1" name="pilihan_1" placeholder="Pernyataan 1"><?= htmlspecialchars($butir_soal['pilihan_1']) ?></textarea>
+                                                <label><input type="radio" name="jawaban_benar[0]" value="Benar"> Benar</label>
                                                 <label><input type="radio" name="jawaban_benar[0]" value="Salah"> Salah</label>
                                                 <hr><br><br>
                                             </div>
                                             <div class="form-group">
-                                            <textarea type="text" class="form-control mb-1" id="bs_2" name="pilihan_2" placeholder="Pernyataan 2"><?= htmlspecialchars($butir_soal['pilihan_2']) ?></textarea>
-                                              <label><input type="radio" name="jawaban_benar[1]" value="Benar"> Benar</label>
+                                                <textarea type="text" class="form-control mb-1" id="bs_2" name="pilihan_2" placeholder="Pernyataan 2"><?= htmlspecialchars($butir_soal['pilihan_2']) ?></textarea>
+                                                <label><input type="radio" name="jawaban_benar[1]" value="Benar"> Benar</label>
                                                 <label><input type="radio" name="jawaban_benar[1]" value="Salah"> Salah</label>
                                                 <hr><br><br>
                                             </div>
                                             <div class="form-group">
-                                            <textarea type="text" class="form-control mb-1" id="bs_3" name="pilihan_3" placeholder="Pernyataan 3"><?= htmlspecialchars($butir_soal['pilihan_3']) ?></textarea>
-                                              <label><input type="radio" name="jawaban_benar[2]" value="Benar"> Benar</label>
+                                                <textarea type="text" class="form-control mb-1" id="bs_3" name="pilihan_3" placeholder="Pernyataan 3"><?= htmlspecialchars($butir_soal['pilihan_3']) ?></textarea>
+                                                <label><input type="radio" name="jawaban_benar[2]" value="Benar"> Benar</label>
                                                 <label><input type="radio" name="jawaban_benar[2]" value="Salah"> Salah</label>
                                                 <hr><br><br>
                                             </div>
                                             <div class="form-group">
-                                            <textarea type="text" class="form-control mb-1" id="bs_4" name="pilihan_4" placeholder="Pernyataan 4"><?= htmlspecialchars($butir_soal['pilihan_4']) ?></textarea>
-                                             <label><input type="radio" name="jawaban_benar[3]" value="Benar"> Benar</label>
+                                                <textarea type="text" class="form-control mb-1" id="bs_4" name="pilihan_4" placeholder="Pernyataan 4"><?= htmlspecialchars($butir_soal['pilihan_4']) ?></textarea>
+                                                <label><input type="radio" name="jawaban_benar[3]" value="Benar"> Benar</label>
                                                 <label><input type="radio" name="jawaban_benar[3]" value="Salah"> Salah</label>
                                                 <hr><br><br>
                                             </div>
@@ -418,13 +440,13 @@ exit();
 
                                         <!-- Menjodohkan -->
                                         <div id="menjodohkan-fields" class="d-none">
-                                            <?php 
+                                            <?php
                                             $pasangan_data = [];
                                             if ($butir_soal['tipe_soal'] == 'Menjodohkan') {
                                                 $pasangan_data = explode('|', $butir_soal['jawaban_benar']);
                                             }
-                                            for ($i = 1; $i <= 8; $i++) : 
-                                                $pair = isset($pasangan_data[$i-1]) ? explode(':', $pasangan_data[$i-1]) : ['', ''];
+                                            for ($i = 1; $i <= 8; $i++) :
+                                                $pair = isset($pasangan_data[$i - 1]) ? explode(':', $pasangan_data[$i - 1]) : ['', ''];
                                             ?>
                                                 <div class="row mb-2">
                                                     <div class="col">
@@ -455,63 +477,65 @@ exit();
             </main>
         </div>
     </div>
-<?php include '../inc/js.php'; ?>
+    <?php include '../inc/js.php'; ?>
     <script src="../assets/summernote/summernote-bs5.js"></script>
     <script>
         //function bersihkanHTML(html) {
-            //return html.replace(/<(?!\/?(img|br)\b)[^>]*>/gi, '');
+        //return html.replace(/<(?!\/?(img|br)\b)[^>]*>/gi, '');
         //}
 
-        $(document).ready(function () {
-        var configEditor = {
-        height: 300,
-        callbacks: {
-            // Hanya tempel teks polos (tanpa format)
-            onPaste: function (e) {
-                e.preventDefault();
-                var clipboardData = e.originalEvent.clipboardData || window.clipboardData;
-                var text = clipboardData.getData('text/plain');
-                document.execCommand("insertText", false, text);
-            },
-
-            // Upload gambar
-            onImageUpload: function (files) {
-                var editor = this;
-                uploadImage(files[0], editor);
-            },
-
-            // Hapus file saat gambar dihapus dari editor
-            onMediaDelete: function (target) {
-                var imageUrl = target[0].src;
-                $.ajax({
-                    url: 'hapus_gambar_editor.php',
-                    method: 'POST',
-                    data: { src: imageUrl },
-                    success: function (response) {
-                        console.log('Gambar dihapus:', response);
+        $(document).ready(function() {
+            var configEditor = {
+                height: 300,
+                callbacks: {
+                    // Hanya tempel teks polos (tanpa format)
+                    onPaste: function(e) {
+                        e.preventDefault();
+                        var clipboardData = e.originalEvent.clipboardData || window.clipboardData;
+                        var text = clipboardData.getData('text/plain');
+                        document.execCommand("insertText", false, text);
                     },
-                    error: function (err) {
-                        console.error('Gagal menghapus gambar:', err);
-                    }
-                });
-            },
-             // Hapus <p><br></p> awal saat inisialisasi
-            onInit: function () {
-                var $editor = $(this).next('.note-editor').find('.note-editable');
-                setTimeout(function () {
-                    var content = $editor.html().trim();
-                    if (content === '<p><br></p>' || content === '<p><br></p>\n') {
-                        $editor.html('');
-                    }
-                }, 10);
-            }
 
-        },
-        toolbar: [
-            ['insert', ['picture']],
-            ['view', ['codeview']]
-        ]
-    };
+                    // Upload gambar
+                    onImageUpload: function(files) {
+                        var editor = this;
+                        uploadImage(files[0], editor);
+                    },
+
+                    // Hapus file saat gambar dihapus dari editor
+                    onMediaDelete: function(target) {
+                        var imageUrl = target[0].src;
+                        $.ajax({
+                            url: 'hapus_gambar_editor.php',
+                            method: 'POST',
+                            data: {
+                                src: imageUrl
+                            },
+                            success: function(response) {
+                                console.log('Gambar dihapus:', response);
+                            },
+                            error: function(err) {
+                                console.error('Gagal menghapus gambar:', err);
+                            }
+                        });
+                    },
+                    // Hapus <p><br></p> awal saat inisialisasi
+                    onInit: function() {
+                        var $editor = $(this).next('.note-editor').find('.note-editable');
+                        setTimeout(function() {
+                            var content = $editor.html().trim();
+                            if (content === '<p><br></p>' || content === '<p><br></p>\n') {
+                                $editor.html('');
+                            }
+                        }, 10);
+                    }
+
+                },
+                toolbar: [
+                    ['insert', ['picture']],
+                    ['view', ['codeview']]
+                ]
+            };
 
             $('#pertanyaan').summernote(configEditor);
             $('#pilihan_1, #pilihan_2, #pilihan_3, #pilihan_4, #kompleks_1, #kompleks_2, #kompleks_3, #kompleks_4, #bs_1, #bs_2, #bs_3, #bs_4').summernote({
@@ -521,12 +545,12 @@ exit();
 
             // Tampilkan fields sesuai tipe soal saat halaman dimuat
             showFields('<?= $butir_soal["tipe_soal"] ?>');
-            
+
             // Set jawaban benar untuk soal yang sedang diedit
             setTimeout(() => {
                 const tipeSoal = '<?= $butir_soal["tipe_soal"] ?>';
                 const jawabanBenar = '<?= $butir_soal["jawaban_benar"] ?>';
-                
+
                 if (tipeSoal === 'Pilihan Ganda') {
                     const checkboxes = document.querySelectorAll('#pilihan-ganda-fields input[name="jawaban_benar[]"]');
                     checkboxes.forEach(cb => {
@@ -549,30 +573,30 @@ exit();
         });
 
         function uploadImage(file, editor) {
-    let formData = new FormData();
-    formData.append('file', file);
+            let formData = new FormData();
+            formData.append('file', file);
 
-    $.ajax({
-        url: 'uploadeditor.php',
-        method: 'POST',
-        data: formData,
-        contentType: false,
-        processData: false,
-        success: function(response) {
-            try {
-                var url = JSON.parse(response).url;
-                $(editor).summernote('insertImage', url, function($image) {
-                    $image.attr('id', 'gbrsoal'); // Tambahkan atribut id
-                });
-            } catch (e) {
-                console.error('Invalid response format');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Upload error:', error);
+            $.ajax({
+                url: 'uploadeditor.php',
+                method: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    try {
+                        var url = JSON.parse(response).url;
+                        $(editor).summernote('insertImage', url, function($image) {
+                            $image.attr('id', 'gbrsoal'); // Tambahkan atribut id
+                        });
+                    } catch (e) {
+                        console.error('Invalid response format');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Upload error:', error);
+                }
+            });
         }
-    });
-}
 
 
         function showFields(tipeSoal) {
@@ -645,4 +669,5 @@ exit();
         });
     </script>
 </body>
+
 </html>
