@@ -42,7 +42,7 @@ if (strtolower($data_soal['status']) !== 'aktif') {
     $_SESSION['warning_message'] = 'Soal Tidak Aktif! Silakan hubungi pengawas.';
     header('Location: ujian.php');
     exit;
-} 
+}
 // Cek jika tanggal hari ini kurang dari tanggal soal (belum dimulai)
 $tanggal_soal = $data_soal['tanggal'];
 $tanggal_hari_ini = date('Y-m-d');
@@ -90,59 +90,66 @@ $_SESSION['konfirmasi_ujian'] = true;
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian Siswa</title>
     <?php include '../inc/css.php'; ?>
     <style>
-           .form-check-custom {
-        padding: 1rem;
-        background-color: #f8f9fa;
-        border-radius: 0.75rem;
-        border: 1px solid #ced4da;
-        transition: all 0.3s ease;
-    }
+        .form-check-custom {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.75rem;
+            border: 1px solid #ced4da;
+            transition: all 0.3s ease;
+        }
 
-    .form-check-custom:hover {
-        background-color: #e9ecef;
-        border-color: #adb5bd;
-    }
+        .form-check-custom:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+        }
 
-    .form-check-input:checked {
-        background-color: #198754;
-        border-color: #198754;
-    }
+        .form-check-input:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
 
-    .form-check-label {
-        font-size: 12px;
-        font-weight: 500;
-        color: #212529;
-        margin-left: 0.5rem;
-    }
-    html, body {
+        .form-check-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #212529;
+            margin-left: 0.5rem;
+        }
+
+        html,
+        body {
             height: 100%;
             margin: 0;
             overflow: hidden;
         }
+
         .wrapper {
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
+
         main.content {
             flex: 1;
             overflow-y: auto;
             padding-bottom: 20px;
         }
+
         main.content {
             flex: 1;
             overflow-y: auto;
             padding-bottom: 20px;
             margin-bottom: 120px;
         }
-</style>
+    </style>
 </head>
+
 <body>
     <div style="height: 80px;"></div>
     <div class="wrapper">
@@ -163,7 +170,9 @@ $_SESSION['konfirmasi_ujian'] = true;
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li><span class="dropdown-item-text"><strong><?php echo $nama_siswa; ?></strong></span></li>
                                 <li><span class="dropdown-item-text"><?php echo $kelas_siswa . $rombel_siswa; ?></span></li>
-                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
                                 <li><a class="dropdown-item text-danger btnLogout" href="logout.php"><i class="fas fa-sign-out-alt me-1"></i> Logout</a></li>
                             </ul>
                         </li>
@@ -182,20 +191,57 @@ $_SESSION['konfirmasi_ujian'] = true;
                                     <div class="card-body">
                                         <h5 class="mb-3">📌 Data Siswa</h5>
                                         <table class="table table-bordered">
-                                            <tr><th width="30%">Nama Siswa</th><td><?= htmlspecialchars($data_siswa['nama_siswa']) ?></td></tr>
-                                            <tr><th width="30%">Username</th><td><?= htmlspecialchars($data_siswa['username']) ?></td></tr>
-                                            <tr><th width="30%">Kelas</th><td><?= htmlspecialchars($data_siswa['kelas']) ?></td></tr>
-                                            <tr><th width="30%">Rombel</th><td><?= htmlspecialchars($data_siswa['rombel']) ?></td></tr>
+                                            <tr>
+                                                <th width="30%">Nama Siswa</th>
+                                                <td><?= htmlspecialchars($data_siswa['nama_siswa']) ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th width="30%">Username</th>
+                                                <td><?= htmlspecialchars($data_siswa['username']) ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th width="30%">Kelas</th>
+                                                <td><?= htmlspecialchars($data_siswa['kelas']) ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th width="30%">Rombel</th>
+                                                <td><?= htmlspecialchars($data_siswa['rombel']) ?></td>
+                                            </tr>
                                         </table>
 
                                         <h5 class="mt-4 mb-3">📝 Data Soal</h5>
                                         <table class="table table-bordered">
-                                            <tr><th width="30%">Kode Soal</th><td><?= htmlspecialchars($data_soal['kode_soal']) ?></td></tr>
-                                            <tr><th width="30%">Mapel</th><td><?= htmlspecialchars($data_soal['mapel']) ?></td></tr>
-                                            <tr><th width="30%">Tanggal Ujian</th><td><?= htmlspecialchars($data_soal['tanggal']) ?></td></tr>
-                                            <tr><th width="30%">Durasi Ujian</th><td><?= htmlspecialchars($data_soal['waktu_ujian']) ?> menit</td></tr>
-                                            <tr><th width="30%">Jumlah Soal</th><td><?= $jumlah_soal ?></td></tr>
+                                            <tr>
+                                                <th width="30%">Kode Soal</th>
+                                                <td><?= htmlspecialchars($data_soal['kode_soal']) ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th width="30%">Mapel</th>
+                                                <td><?= htmlspecialchars($data_soal['mapel']) ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th width="30%">Tanggal Ujian</th>
+                                                <td><?= htmlspecialchars($data_soal['tanggal']) ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th width="30%">Durasi Ujian</th>
+                                                <td><?= htmlspecialchars($data_soal['waktu_ujian']) ?> menit</td>
+                                            </tr>
+                                            <tr>
+                                                <th width="30%">Jumlah Soal</th>
+                                                <td><?= $jumlah_soal ?></td>
+                                            </tr>
                                         </table>
+
+                                        <!-- Aturan Ujian Section -->
+                                        <?php if (!empty($data_tema['aturan_ujian'])): ?>
+                                            <h5 class="mt-4 mb-3">📋 Aturan Ujian</h5>
+                                            <div class="card mb-4">
+                                                <div class="card-body bg-light rounded">
+                                                    <?= $data_tema['aturan_ujian'] ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
 
                                         <div class="text-start mt-4">
                                             <form action="mulaiujian.php" method="post" class="row g-2 justify-content-start align-items-center">
@@ -206,7 +252,7 @@ $_SESSION['konfirmasi_ujian'] = true;
                                                     <div class="form-check">
                                                         <input class="form-check-input" type="checkbox" id="persetujuan" required>
                                                         <label class="form-check-label" for="persetujuan">
-                                                            Saya siap mengerjakan ujian ini secara jujur dan bertanggung jawab.
+                                                            Saya telah membaca dan memahami aturan ujian di atas, serta siap mengerjakan ujian ini secara jujur dan bertanggung jawab.
                                                         </label>
                                                     </div>
                                                 </div>
@@ -229,28 +275,29 @@ $_SESSION['konfirmasi_ujian'] = true;
                                             </form>
                                         </div>
 
-                                 </div>       
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
             </main>
         </div>
     </div>
     <footer class="footer mt-auto py-3 bg-dark sticky-bottom">
-                                                    <div class="container-fluid">
-                                                        <div class="row text-grey">
-                                                            <div class="col-6 text-start">
-                                                                <p class="mb-0">
-                                                                <a href="#" id="enc" style="color:grey;"></a>
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </footer>
-<?php include '../inc/js.php'; ?>
-<?php include '../inc/check_activity.php'; ?>
-<script>
-</script>
+        <div class="container-fluid">
+            <div class="row text-grey">
+                <div class="col-6 text-start">
+                    <p class="mb-0">
+                        <a href="#" id="enc" style="color:grey;"></a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <?php include '../inc/js.php'; ?>
+    <?php include '../inc/check_activity.php'; ?>
+    <script>
+    </script>
 </body>
+
 </html>
