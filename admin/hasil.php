@@ -32,11 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $where .= " AND s.nama_siswa LIKE '%$nama_siswa%'";
     }
 
-    $query = "SELECT n.id_nilai, n.id_siswa, s.nama_siswa, s.kelas, s.rombel, n.kode_soal, n.total_soal, 
-                n.status_penilaian, n.jawaban_benar, n.jawaban_salah, n.jawaban_kurang, 
-                n.nilai, n.nilai_uraian, n.tanggal_ujian
+    $query = "SELECT n.id_nilai, n.id_siswa, s.nama_siswa, s.kelas, s.rombel, n.kode_soal, n.total_soal,
+                n.status_penilaian, n.jawaban_benar, n.jawaban_salah, n.jawaban_kurang,
+                n.nilai, n.nilai_uraian, n.tanggal_ujian, j.jenis_ujian
               FROM nilai n
               JOIN siswa s ON n.id_siswa = s.id_siswa
+              LEFT JOIN jawaban_siswa j ON n.id_siswa = j.id_siswa AND n.kode_soal = j.kode_soal
               WHERE $where
               ORDER BY n.tanggal_ujian DESC";
 
@@ -55,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <th>Nilai Uraian</th>
                         <th>Nilai Akhir</th>
                         <th>Tanggal Ujian</th>
+                        <th>Jenis Ujian</th>
                         <th>Koreksi Uraian</th>
                         <th>Aksi</th>
                     </tr>
@@ -63,21 +65,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $no = 1;
         while ($row = mysqli_fetch_assoc($result)) {
+            $jenis_ujian_value = ($row['jenis_ujian'] === '1') ? 'susulan' : 'utama';
+
             // Tombol Aksi
             $hapusBtn = "<button class='btn btn-sm btn-danger btnHapus' data-id='{$row['id_nilai']}'>
                             <i class='fa fa-close'></i> Hapus
                          </button>";
 
-            $prevBtn = "<a href='preview_siswa.php?id_siswa={$row['id_siswa']}&kode_soal={$row['kode_soal']}' 
-                          class='btn btn-sm btn-secondary'>
-                          <i class='fa fa-eye'></i> Preview
-                       </a>";
+            // Tombol Preview (UPDATED)
+            $prevBtn = "
+                <a href='preview_siswa.php?id_siswa={$row['id_siswa']}&kode_soal={$row['kode_soal']}&jenis_ujian={$jenis_ujian_value}'
+                   class='btn btn-sm btn-secondary'>
+                    <i class='fa fa-eye'></i> Preview
+                </a>
+            ";
 
             $koreksiBtn = '';
             if ($row['status_penilaian'] === 'perlu_dinilai') {
                 $btnClass = ($row['nilai_uraian'] <= 0) ? 'outline-danger' : 'outline-info';
-                $koreksiBtn = "<button class='btn btn-sm btn-{$btnClass} btnKoreksi' 
-                                  data-id_siswa='{$row['id_siswa']}' 
+                $koreksiBtn = "<button class='btn btn-sm btn-{$btnClass} btnKoreksi'
+                                  data-id_siswa='{$row['id_siswa']}'
                                   data-kode_soal='{$row['kode_soal']}'>
                                   <i class='fa fa-edit'></i> " .
                     (($row['nilai_uraian'] <= 0) ? 'Belum' : 'Sudah') .
@@ -99,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td>{$row['nilai_uraian']}</td>
                     <td class='nilai-col'>{$nilai_akhir}</td>
                     <td>{$tanggal_ujian}</td>
+                    <td class='text-capitalize'>{$jenis_ujian_value}</td>
                     <td>{$koreksiBtn}</td>
                     <td>
                         <div class='btn-group' role='group'>
@@ -172,8 +180,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <select class="form-select" name="kelas_rombel" id="kelas_rombel">
                                             <option value="">Semua Kelas</option>
                                             <?php
-                                            $qKR = mysqli_query($koneksi, "SELECT DISTINCT CONCAT(kelas, ' - ', rombel) 
-                                                                          AS kelas_rombel FROM siswa 
+                                            $qKR = mysqli_query($koneksi, "SELECT DISTINCT CONCAT(kelas, ' - ', rombel)
+                                                                          AS kelas_rombel FROM siswa
                                                                           ORDER BY kelas, rombel");
                                             while ($kr = mysqli_fetch_assoc($qKR)) {
                                                 echo "<option value='{$kr['kelas_rombel']}'>{$kr['kelas_rombel']}</option>";
