@@ -147,7 +147,7 @@ if ($w = mysqli_fetch_assoc($get_waktu)) {
         } elseif (strpos($jawab, ',') !== false) {
             $jawaban_tersimpan[$nomor] = explode(',', $jawaban);
         } else {
-            $jawaban_tersimpan[$nomor] = $jawaban;
+            $jawaban_tersimpan[$nomor] = $jawab;
         }
     }
 }
@@ -471,7 +471,7 @@ foreach ($matches as $match) {
                                         <?php endif; ?>
 
                                         <?php if (!empty($soal)): ?>
-                                            <div class="navigation-buttons">
+                                            <div class="navigation-buttons" style="position: sticky; bottom: 0; background: #fff; padding: 15px 0; border-top: 1px solid #dee2e6; z-index: 100; margin-top: 20px;">
                                                 <div style="flex: 1;">
                                                     <button type="button" class="btn btn-primary" id="prevBtn"
                                                         onclick="prevSoal()" style="display: none; float: left;">
