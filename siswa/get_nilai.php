@@ -46,6 +46,7 @@ while ($row = mysqli_fetch_assoc($query)) {
         'mapel'              => $row['mapel'],
         'jenis_ujian'        => $jenis_label,           // for display
         'jenis_ujian_value'  => $jenis_value,           // for logic / URL
+        'nilai_uraian'       => $row['nilai_uraian'],   // for checking in JS
         'nilai'              => $nilai_display,
         'tanggal_ujian'      => date('d M Y, H:i', strtotime($row['tanggal_ujian']))
     ];

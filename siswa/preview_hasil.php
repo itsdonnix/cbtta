@@ -56,6 +56,70 @@ $nilai_otomatis = (float)($row['nilai'] ?? 0);
 $nilai_uraian   = (float)($row['nilai_uraian'] ?? 0);
 $nilai_siswa    = $nilai_otomatis + $nilai_uraian;
 
+// ===== CHECK IF nilai_uraian EXISTS AND > 0 =====
+if ($nilai_uraian <= 0) {
+?>
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Preview Hasil Ujian</title>
+        <?php include '../inc/css.php'; ?>
+        <style>
+            .alert-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 300px;
+            }
+
+            .alert-content {
+                text-align: center;
+                padding: 30px;
+                border: 2px dashed #ccc;
+                border-radius: 10px;
+                background-color: #f9f9f9;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="wrapper">
+            <?php include 'sidebar.php'; ?>
+            <div class="main">
+                <?php include 'navbar.php'; ?>
+                <main class="content">
+                    <div class="container-fluid p-0">
+                        <h1>Preview Hasil Ujian</h1>
+                        <div class="row mb-4">
+                            <div class="card-header">
+                                <a href="hasil.php"><button type="button" class="btn btn-secondary">Kembali</button></a>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="alert-container">
+                                <div class="alert-content">
+                                    <h3><i class="fa fa-info-circle text-warning"></i> Informasi</h3>
+                                    <p>Nilai untuk ujian ini belum tersedia.</p>
+                                    <p>Silakan menunggu hingga nilai ujian diperbarui oleh pengajar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        <?php include '../inc/js.php'; ?>
+        <?php include '../inc/check_activity.php'; ?>
+    </body>
+
+    </html>
+<?php
+    exit;
+}
+
 // ===== PARSE DETAIL URAIAN =====
 $skor_uraian = [];
 if (!empty($row['detail_uraian'])) {

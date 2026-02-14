@@ -75,9 +75,20 @@ include '../inc/datasiswa.php';
                         title: 'Aksi',
                         orderable: false,
                         render: function(data, type, row) {
+                            // Check if nilai_uraian exists and is > 0
+                            const hasUraian = row.nilai_uraian && parseFloat(row.nilai_uraian) > 0;
+
+                            // Disable button if no uraian value or still 0
+                            const disabled = !hasUraian ? 'disabled' : '';
+                            const disabledClass = !hasUraian ? 'btn-outline-secondary disabled' : 'btn-outline-secondary';
+
+                            // Only add href attribute if button is enabled
+                            const href = hasUraian ? `href="preview_hasil.php?kode_soal=${encodeURIComponent(row.kode_soal)}&id_siswa=${encodeURIComponent(row.id_siswa)}&jenis_ujian=${encodeURIComponent(row.jenis_ujian_value)}"` : '';
+
                             return `
-                                <a class="btn btn-sm btn-outline-secondary"
-                                   href="preview_hasil.php?kode_soal=${encodeURIComponent(row.kode_soal)}&id_siswa=${encodeURIComponent(row.id_siswa)}&jenis_ujian=${encodeURIComponent(row.jenis_ujian_value)}">
+                                <a class="btn btn-sm ${disabledClass}"
+                                   ${disabled}
+                                   ${href}>
                                     <i class="fa fa-eye"></i> Preview Nilai
                                 </a>
                             `;
