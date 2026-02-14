@@ -50,80 +50,86 @@ include '../inc/datasiswa.php';
             $.getJSON('get_nilai.php', function(response) {
                 let sembunyikan = response.sembunyikan_nilai == 1;
 
-                let kolom = [{
-                        data: 'nama_siswa',
-                        title: 'Nama Siswa'
-                    },
-                    {
-                        data: 'kode_soal',
-                        title: 'Kode Soal'
-                    },
-                    {
-                        data: 'mapel',
-                        title: 'Mapel'
-                    },
-                    {
-                        data: 'jenis_ujian',
-                        title: 'Jenis Ujian'
-                    },
-                    {
-                        data: 'tanggal_ujian',
-                        title: 'Waktu Ujian'
-                    },
-                    {
-                        data: 'aksi',
-                        title: 'Aksi',
-                        orderable: false,
-                        render: function(data, type, row) {
-                            // Check if nilai_uraian exists and is > 0
-                            const hasUraian = row.nilai_uraian && parseFloat(row.nilai_uraian) > 0;
+                // Fetch exam types for all kode_soal to check for essay questions
+                let kodeSoalList = [...new Set(response.data.map(item => item.kode_soal))];
+                let kodeSoalParams = kodeSoalList.map(k => 'kode_soal[]=' + encodeURIComponent(k)).join('&');
 
-                            // Disable button if no uraian value or still 0
-                            const disabled = !hasUraian ? 'disabled' : '';
-                            const disabledClass = !hasUraian ? 'btn-outline-secondary disabled' : 'btn-outline-secondary';
-
-                            // Only add href attribute if button is enabled
-                            const href = hasUraian ? `href="preview_hasil.php?kode_soal=${encodeURIComponent(row.kode_soal)}&id_siswa=${encodeURIComponent(row.id_siswa)}&jenis_ujian=${encodeURIComponent(row.jenis_ujian_value)}"` : '';
-
-                            return `
-                                <a class="btn btn-sm ${disabledClass}"
-                                   ${disabled}
-                                   ${href}>
-                                    <i class="fa fa-eye"></i> Preview Nilai
-                                </a>
-                            `;
-                        }
-                    }
-                ];
-
-                if (!sembunyikan) {
-                    // Tambahkan kolom nilai dengan formatter 2 digit
-                    kolom.splice(3, 0, {
-                        data: 'nilai',
-                        title: 'Nilai',
-                        render: function(data, type, row) {
-                            if (type === 'display' || type === 'filter') {
-                                // Format dengan 2 digit desimal
-                                return parseFloat(data).toFixed(2);
-                            }
-                            return data;
+                $.getJSON('check_soal_has_uraian.php?' + kodeSoalParams, function(soalData) {
+                    let kolom = [{
+                            data: 'nama_siswa',
+                            title: 'Nama Siswa'
                         },
-                        type: 'num-fmt' // Untuk sorting numerik yang benar
-                    });
-                }
+                        {
+                            data: 'kode_soal',
+                            title: 'Kode Soal'
+                        },
+                        {
+                            data: 'mapel',
+                            title: 'Mapel'
+                        },
+                        {
+                            data: 'jenis_ujian',
+                            title: 'Jenis Ujian'
+                        },
+                        {
+                            data: 'tanggal_ujian',
+                            title: 'Waktu Ujian'
+                        },
+                        {
+                            data: 'aksi',
+                            title: 'Aksi',
+                            orderable: false,
+                            render: function(data, type, row) {
+                                // Check if the soal has essay questions (uraian)
+                                const hasUraian = soalData[row.kode_soal] === true;
 
-                $('#tabelHasil').DataTable({
-                    data: response.data,
-                    columns: kolom,
-                    destroy: true,
-                    language: {
-                        decimal: ",", // Untuk format desimal Indonesia
-                        thousands: "." // Untuk format ribuan Indonesia
-                    },
-                    columnDefs: [{
-                        targets: 3, // Kolom nilai (index 3 setelah disisipkan)
-                        className: 'dt-body-right' // Rata kanan untuk kolom angka
-                    }]
+                                // Enable button when there is NO essay in the soal
+                                const disabled = hasUraian ? 'disabled' : '';
+                                const disabledClass = hasUraian ? 'btn-outline-secondary disabled' : 'btn-outline-secondary';
+
+                                // Only add href attribute if button is enabled (no essay questions)
+                                const href = !hasUraian ? `href="preview_hasil.php?kode_soal=${encodeURIComponent(row.kode_soal)}&id_siswa=${encodeURIComponent(row.id_siswa)}&jenis_ujian=${encodeURIComponent(row.jenis_ujian_value)}"` : '';
+
+                                return `
+                                    <a class="btn btn-sm ${disabledClass}"
+                                       ${disabled}
+                                       ${href}>
+                                        <i class="fa fa-eye"></i> Preview Nilai
+                                    </a>
+                                `;
+                            }
+                        }
+                    ];
+
+                    if (!sembunyikan) {
+                        // Tambahkan kolom nilai dengan formatter 2 digit
+                        kolom.splice(3, 0, {
+                            data: 'nilai',
+                            title: 'Nilai',
+                            render: function(data, type, row) {
+                                if (type === 'display' || type === 'filter') {
+                                    // Format dengan 2 digit desimal
+                                    return parseFloat(data).toFixed(2);
+                                }
+                                return data;
+                            },
+                            type: 'num-fmt' // Untuk sorting numerik yang benar
+                        });
+                    }
+
+                    $('#tabelHasil').DataTable({
+                        data: response.data,
+                        columns: kolom,
+                        destroy: true,
+                        language: {
+                            decimal: ",", // Untuk format desimal Indonesia
+                            thousands: "." // Untuk format ribuan Indonesia
+                        },
+                        columnDefs: [{
+                            targets: sembunyikan ? 3 : 4, // Adjust index based on whether nilai column is shown
+                            className: 'dt-body-right' // Rata kanan untuk kolom angka
+                        }]
+                    });
                 });
             });
         });

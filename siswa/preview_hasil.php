@@ -15,49 +15,25 @@ $id_siswa    = $_GET['id_siswa'];
 $jenis_ujian = $_GET['jenis_ujian']; // utama | susulan
 $jenis_ujian_int = ($jenis_ujian === 'susulan') ? 1 : 0;
 
-/**
- * 🔑 MAIN QUERY
- * jawaban_siswa = sumber utama
- */
-$query = mysqli_query($koneksi, "
-    SELECT 
-        js.jawaban_siswa,
-        js.waktu_dijawab,
-        js.jenis_ujian,
-        n.nilai,
-        n.nilai_uraian,
-        n.detail_uraian,
-        s.nama_siswa
-    FROM jawaban_siswa js
-    JOIN siswa s 
-        ON s.id_siswa = js.id_siswa
-    LEFT JOIN nilai n 
-        ON n.id_siswa = js.id_siswa 
-        AND n.kode_soal = js.kode_soal
-    WHERE js.id_siswa   = '$id_siswa'
-      AND js.kode_soal  = '$kode_soal'
-      AND js.jenis_ujian = $jenis_ujian_int
-    LIMIT 1
+// ===== CHECK IF SOAL HAS ESSAY QUESTIONS FOR THIS SPECIFIC JENIS_UJIAN =====
+$query_check_uraian = mysqli_query($koneksi, "
+    SELECT CASE WHEN COUNT(q.id_soal) > 0 THEN 1 ELSE 0 END as has_uraian
+    FROM soal s
+    LEFT JOIN butir_soal q ON s.kode_soal = q.kode_soal 
+        AND q.tipe_soal = 'Uraian'
+        AND q.jenis_ujian = $jenis_ujian_int
+    WHERE s.kode_soal = '$kode_soal'
+    GROUP BY s.kode_soal
 ");
 
-if (!$query || mysqli_num_rows($query) === 0) {
-    echo "Jawaban siswa untuk jenis ujian ini tidak ditemukan.";
-    exit;
+$has_uraian = false;
+if ($query_check_uraian && mysqli_num_rows($query_check_uraian) > 0) {
+    $row_check = mysqli_fetch_assoc($query_check_uraian);
+    $has_uraian = (bool)$row_check['has_uraian'];
 }
 
-$row = mysqli_fetch_assoc($query);
-
-// ===== DATA UTAMA =====
-$jawaban_siswa_raw = $row['jawaban_siswa'];
-$nama_siswa        = $row['nama_siswa'];
-$tanggal_ujian     = $row['waktu_dijawab'];
-
-$nilai_otomatis = (float)($row['nilai'] ?? 0);
-$nilai_uraian   = (float)($row['nilai_uraian'] ?? 0);
-$nilai_siswa    = $nilai_otomatis + $nilai_uraian;
-
-// ===== CHECK IF nilai_uraian EXISTS AND > 0 =====
-if ($nilai_uraian <= 0) {
+// CONDITION 1: If the exam HAS essay questions for this jenis_ujian, show guard message
+if ($has_uraian) {
 ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -102,8 +78,8 @@ if ($nilai_uraian <= 0) {
                             <div class="alert-container">
                                 <div class="alert-content">
                                     <h3><i class="fa fa-info-circle text-warning"></i> Informasi</h3>
-                                    <p>Nilai untuk ujian ini belum tersedia.</p>
-                                    <p>Silakan menunggu hingga nilai ujian diperbarui oleh pengajar.</p>
+                                    <p>Preview nilai tidak tersedia untuk ujian yang mengandung soal uraian.</p>
+                                    <p>Silakan hubungi pengajar untuk melihat hasil ujian Anda.</p>
                                 </div>
                             </div>
                         </div>
@@ -119,6 +95,108 @@ if ($nilai_uraian <= 0) {
 <?php
     exit;
 }
+
+// ===== IF NO ESSAY QUESTIONS FOR THIS JENIS_UJIAN, CHECK FOR STUDENT ANSWERS =====
+/**
+ * 🔑 MAIN QUERY
+ * jawaban_siswa = sumber utama
+ */
+$query = mysqli_query($koneksi, "
+    SELECT 
+        js.jawaban_siswa,
+        js.waktu_dijawab,
+        js.jenis_ujian,
+        n.nilai,
+        n.nilai_uraian,
+        n.detail_uraian,
+        s.nama_siswa
+    FROM jawaban_siswa js
+    JOIN siswa s 
+        ON s.id_siswa = js.id_siswa
+    LEFT JOIN nilai n 
+        ON n.id_siswa = js.id_siswa 
+        AND n.kode_soal = js.kode_soal
+    WHERE js.id_siswa   = '$id_siswa'
+      AND js.kode_soal  = '$kode_soal'
+      AND js.jenis_ujian = $jenis_ujian_int
+    LIMIT 1
+");
+
+// CONDITION 2: If no essay questions BUT student answers not found
+if (!$query || mysqli_num_rows($query) === 0) {
+?>
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Preview Hasil Ujian</title>
+        <?php include '../inc/css.php'; ?>
+        <style>
+            .alert-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 300px;
+            }
+
+            .alert-content {
+                text-align: center;
+                padding: 30px;
+                border: 2px dashed #ccc;
+                border-radius: 10px;
+                background-color: #f9f9f9;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="wrapper">
+            <?php include 'sidebar.php'; ?>
+            <div class="main">
+                <?php include 'navbar.php'; ?>
+                <main class="content">
+                    <div class="container-fluid p-0">
+                        <h1>Preview Hasil Ujian</h1>
+                        <div class="row mb-4">
+                            <div class="card-header">
+                                <a href="hasil.php"><button type="button" class="btn btn-secondary">Kembali</button></a>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="alert-container">
+                                <div class="alert-content">
+                                    <h3><i class="fa fa-info-circle text-warning"></i> Informasi</h3>
+                                    <p>Jawaban siswa untuk ujian ini tidak ditemukan.</p>
+                                    <p>Anda mungkin belum mengerjakan ujian ini atau data sedang diproses.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        <?php include '../inc/js.php'; ?>
+        <?php include '../inc/check_activity.php'; ?>
+    </body>
+
+    </html>
+<?php
+    exit;
+}
+
+// CONDITION 3: No essay questions AND student answers found - SHOW ALL DETAILS
+$row = mysqli_fetch_assoc($query);
+
+// ===== DATA UTAMA =====
+$jawaban_siswa_raw = $row['jawaban_siswa'];
+$nama_siswa        = $row['nama_siswa'];
+$tanggal_ujian     = $row['waktu_dijawab'];
+
+$nilai_otomatis = (float)($row['nilai'] ?? 0);
+$nilai_uraian   = (float)($row['nilai_uraian'] ?? 0);
+$nilai_siswa    = $nilai_otomatis + $nilai_uraian;
 
 // ===== PARSE DETAIL URAIAN =====
 $skor_uraian = [];
@@ -178,6 +256,7 @@ if ($kunci_jawaban) {
             FROM butir_soal 
             WHERE kode_soal='$kode_soal' 
             AND nomer_soal='$no'
+            AND jenis_ujian = $jenis_ujian_int
         ");
         $tipe = strtolower(mysqli_fetch_assoc($q)['tipe_soal'] ?? '');
 
