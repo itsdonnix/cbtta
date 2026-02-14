@@ -25,11 +25,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_excel'])) {
 
     if (in_array($file_type, $allowed_types)) {
         $ext = pathinfo($file_name, PATHINFO_EXTENSION);
-        $reader = IOFactory::createReader(match(strtolower($ext)) {
-            'csv'  => 'Csv',
-            'xls'  => 'Xls',
-            default => 'Xlsx'
-        });
+        $ext = strtolower($ext);
+        if ($ext == 'csv') {
+            $readerType = 'Csv';
+        } elseif ($ext == 'xls') {
+            $readerType = 'Xls';
+        } else {
+            $readerType = 'Xlsx';
+        }
+
+        $reader = IOFactory::createReader($readerType);
 
         try {
             $spreadsheet = $reader->load($tmp_file);
@@ -43,8 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_excel'])) {
 
             // Validasi: semua baris harus punya kode_soal yang sama dengan form
             for ($i = 1; $i < count($data); $i++) {
-                $excel_kode_soal = trim($data[$i][1]);
-                if ($excel_kode_soal !== $form_kode_soal) {
+                $excel_kode_soal = strtoupper(trim(preg_replace('/\s+/', '', (string)$data[$i][1])));
+                $form_kode_soal_clean = strtoupper(trim(preg_replace('/\s+/', '', (string)$form_kode_soal)));
+                if ($excel_kode_soal != $form_kode_soal_clean) {
                     $_SESSION['import_error'] = "Kode soal di Excel baris ke-" . ($i + 1) . " tidak sesuai dengan kode soal yang dipilih.";
                     header("Location: daftar_butir_soal.php?kode_soal=" . urlencode($form_kode_soal));
                     exit;
@@ -65,7 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_excel'])) {
                 $pilihan_4      = trim($data[$i][7]);
                 $jawaban_benar  = trim($data[$i][8]);
                 $status_soal    = trim($data[$i][9]);
+                $jenis_ujian    = isset($data[$i][10]) ? intval($data[$i][10]) : 0; // kolom ke-11
 
+                // Cek duplikat berdasarkan nomer_soal dan kode_soal
                 $cek = $koneksi->prepare("SELECT COUNT(*) FROM butir_soal WHERE nomer_soal = ? AND kode_soal = ?");
                 $cek->bind_param("is", $nomer_soal, $kode_soal);
                 $cek->execute();
@@ -78,11 +86,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_excel'])) {
                     continue;
                 }
 
+                // Insert data ke database termasuk jenis_ujian
                 $stmt = $koneksi->prepare("INSERT INTO butir_soal 
-                    (nomer_soal, kode_soal, pertanyaan, tipe_soal, pilihan_1, pilihan_2, pilihan_3, pilihan_4, jawaban_benar, status_soal)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("isssssssss", $nomer_soal, $kode_soal, $pertanyaan, $tipe_soal, 
-                                  $pilihan_1, $pilihan_2, $pilihan_3, $pilihan_4, $jawaban_benar, $status_soal);
+                    (nomer_soal, kode_soal, pertanyaan, tipe_soal, pilihan_1, pilihan_2, pilihan_3, pilihan_4, jawaban_benar, status_soal, jenis_ujian)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param(
+                    "isssssssssi",
+                    $nomer_soal,
+                    $kode_soal,
+                    $pertanyaan,
+                    $tipe_soal,
+                    $pilihan_1,
+                    $pilihan_2,
+                    $pilihan_3,
+                    $pilihan_4,
+                    $jawaban_benar,
+                    $status_soal,
+                    $jenis_ujian
+                );
+
                 if ($stmt->execute()) {
                     $successCount++;
                 }
@@ -97,13 +119,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_excel'])) {
 
             header("Location: daftar_butir_soal.php?kode_soal=" . urlencode($form_kode_soal));
             exit;
-
         } catch (Exception $e) {
             $_SESSION['import_error'] = "Terjadi kesalahan saat membaca file Excel: " . $e->getMessage();
             header("Location: daftar_butir_soal.php?kode_soal=" . urlencode($form_kode_soal));
             exit;
         }
-
     } else {
         $_SESSION['import_error'] = "Format file tidak valid!";
         header("Location: daftar_butir_soal.php?kode_soal=" . urlencode($form_kode_soal));

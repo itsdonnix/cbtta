@@ -51,40 +51,49 @@ if (isset($_FILES['file']['name'])) {
     $gagal = 0;
     $duplikat = 0;
 
-    foreach ($data as $i => $row) {
-        if ($i == 1) continue; // Lewati header
+foreach ($data as $i => $row) {
+    if ($i == 1) continue; // Lewati header
 
-        $nama     = mysqli_real_escape_string($koneksi, htmlspecialchars(trim($row['A'] ?? '')));
-        $username = mysqli_real_escape_string($koneksi, htmlspecialchars(trim($row['B'] ?? '')));
-        $password = trim(preg_replace('/\s+/', '', $row['C'] ?? ''));
-        $kelas    = mysqli_real_escape_string($koneksi, htmlspecialchars(trim($row['D'] ?? '')));
-        $rombel   = mysqli_real_escape_string($koneksi, htmlspecialchars(trim($row['E'] ?? '')));
+    $nama     = mysqli_real_escape_string($koneksi, htmlspecialchars(trim($row['A'] ?? '')));
+    $username = mysqli_real_escape_string($koneksi, htmlspecialchars(trim($row['B'] ?? '')));
+    $password = trim(preg_replace('/\s+/', '', $row['C'] ?? ''));
+    $kelas    = mysqli_real_escape_string($koneksi, htmlspecialchars(trim($row['D'] ?? '')));
+    $rombel   = mysqli_real_escape_string($koneksi, htmlspecialchars(trim($row['E'] ?? '')));
 
-        if ($nama && $username && $password && $kelas && $rombel) {
-            // Cek duplikat
-            $cek = mysqli_query($koneksi, "SELECT * FROM siswa WHERE username = '$username'");
-            if (mysqli_num_rows($cek) > 0) {
-                $duplikat++;
-                continue;
-            }
+    // ✅ rombel tidak wajib
+    if ($nama && $username && $password && $kelas) {
 
-            // Enkripsi password
-            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($method));
-            $encrypted = openssl_encrypt($password, $method, $rahasia, 0, $iv);
-            $final = base64_encode($iv . $encrypted);
+        // Cek duplikat
+        $cek = mysqli_query($koneksi, "SELECT * FROM siswa WHERE username = '$username'");
+        if (mysqli_num_rows($cek) > 0) {
+            $duplikat++;
+            continue;
+        }
 
-            // Insert DB
-            $insert = mysqli_query($koneksi, "INSERT INTO siswa (nama_siswa, username, password, kelas, rombel) VALUES ('$nama', '$username', '$final', '$kelas', '$rombel')");
+        // Enkripsi password
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($method));
+        $encrypted = openssl_encrypt($password, $method, $rahasia, 0, $iv);
+        $final = base64_encode($iv . $encrypted);
 
-            if ($insert) {
-                $berhasil++;
-            } else {
-                $gagal++;
-            }
+        // Jika rombel kosong → set NULL
+        $rombel_value = ($rombel == '') ? "NULL" : "'$rombel'";
+
+        // Insert DB
+        $insert = mysqli_query($koneksi, "
+            INSERT INTO siswa (nama_siswa, username, password, kelas, rombel) 
+            VALUES ('$nama', '$username', '$final', '$kelas', $rombel_value)
+        ");
+
+        if ($insert) {
+            $berhasil++;
         } else {
             $gagal++;
         }
+
+    } else {
+        $gagal++;
     }
+}
 
     echo json_encode([
         'status' => 'success',
