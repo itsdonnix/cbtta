@@ -222,12 +222,34 @@ if ($data_soal['status'] == 'Aktif') {
                                                     $jenis_ujian_text = ($butir['jenis_ujian'] == '0') ? 'Ujian Utama' : 'Ujian Susulan';
                                                     $jenis_ujian_class = ($butir['jenis_ujian'] == '0') ? 'badge bg-primary' : 'badge bg-warning';
 
+                                                    // Status styling
+                                                    $status_text = $butir['status_soal'];
+                                                    $status_class = '';
+                                                    switch (strtolower($status_text)) {
+                                                        case 'aktif':
+                                                            $status_class = 'badge bg-success';
+                                                            break;
+                                                        case 'tidak aktif':
+                                                        case 'non-aktif':
+                                                            $status_class = 'badge bg-danger';
+                                                            break;
+                                                        case 'draft':
+                                                            $status_class = 'badge bg-warning';
+                                                            break;
+                                                        case 'review':
+                                                            $status_class = 'badge bg-info';
+                                                            break;
+                                                        default:
+                                                            $status_class = 'badge bg-secondary';
+                                                            break;
+                                                    }
+
                                                     echo "<tr>";
                                                     echo "<td>" . htmlspecialchars($butir['nomer_soal']) . "</td>";
                                                     echo "<td>$butir[pertanyaan]</td>";
                                                     echo "<td>" . htmlspecialchars($butir['tipe_soal']) . "</td>";
                                                     echo "<td><span class='$jenis_ujian_class'>$jenis_ujian_text</span></td>"; // Kolom jenis ujian
-                                                    echo "<td>" . htmlspecialchars($butir['status_soal']) . "</td>";
+                                                    echo "<td><span class='$status_class'>$status_text</span></td>";
                                                     echo "<td>
                                                         <a href='edit_butir_soal.php?id_soal=" . htmlspecialchars($butir['id_soal']) . "&kode_soal=" . htmlspecialchars($kode_soal) . "' class='btn btn-sm btn-primary'>
                                                             <i class='fas fa-edit'></i> Edit
