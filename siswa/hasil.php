@@ -80,25 +80,14 @@ include '../inc/datasiswa.php';
                             title: 'Aksi',
                             orderable: false,
                             render: function(data, type, row) {
-                                // Check if the soal has essay questions (uraian)
-                                const hasUraian = soalData[row.kode_soal] === true;
-
-                                // Enable button when there is NO essay in the soal
-                                const disabled = hasUraian ? 'disabled' : '';
-                                const disabledClass = hasUraian ? 'btn-outline-secondary disabled' : 'btn-outline-secondary';
-
-                                // Only add href attribute if button is enabled (no essay questions)
-                                const href = !hasUraian ? `href="preview_hasil.php?kode_soal=${encodeURIComponent(row.kode_soal)}&id_siswa=${encodeURIComponent(row.id_siswa)}&jenis_ujian=${encodeURIComponent(row.jenis_ujian_value)}"` : '';
-
                                 return `
-                                    <a class="btn btn-sm ${disabledClass}"
-                                       ${disabled}
-                                       ${href}>
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="preview_hasil.php?kode_soal=${encodeURIComponent(row.kode_soal)}&id_siswa=${encodeURIComponent(row.id_siswa)}&jenis_ujian=${encodeURIComponent(row.jenis_ujian_value)}">
                                         <i class="fa fa-eye"></i> Preview Nilai
                                     </a>
                                 `;
                             }
-                        }
+                        }                
                     ];
 
                     if (!sembunyikan) {
