@@ -21,7 +21,7 @@ if (isset($_GET['kode_soal']) && is_array($_GET['kode_soal'])) {
         SELECT s.kode_soal, 
                CASE WHEN COUNT(q.id_soal) > 0 THEN 1 ELSE 0 END as has_uraian
         FROM soal s
-        LEFT JOIN questions q ON s.kode_soal = q.kode_soal AND q.tipe = 'uraian'
+        LEFT JOIN butir_soal q ON s.kode_soal = q.kode_soal AND q.tipe_soal = 'uraian'
         WHERE s.kode_soal IN ($kodeSoalString)
         GROUP BY s.kode_soal
     ");
