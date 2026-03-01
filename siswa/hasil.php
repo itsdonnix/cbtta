@@ -52,13 +52,12 @@ include '../inc/datasiswa.php';
 
                 // Fetch exam types for all kode_soal to check for essay questions
                 let kodeSoalList = [...new Set(response.data.map(item => item.kode_soal))];
-                let kodeSoalParams = kodeSoalList.map(k => 'kode_soal[]=' + encodeURIComponent(k)).join('&');
+                let kodeSoalParams = response.data.map(item => 'kode_soal[]=' + encodeURIComponent(item.kode_soal) + 
+                '&jenis_ujian[]=' + encodeURIComponent(item.jenis_ujian_value)
+                ).join('&');
 
                 $.getJSON('check_soal_has_uraian.php?' + kodeSoalParams, function(soalData) {
-                    let kolom = [{
-                            data: 'nama_siswa',
-                            title: 'Nama Siswa'
-                        },
+                    let kolom = [
                         {
                             data: 'kode_soal',
                             title: 'Kode Soal'
@@ -79,26 +78,47 @@ include '../inc/datasiswa.php';
                             data: 'aksi',
                             title: 'Aksi',
                             orderable: false,
-                            render: function(data, type, row) {
-                                // Check if the soal has essay questions (uraian)
-                                const hasUraian = soalData[row.kode_soal] === true;
+render: function(data, type, row) {
 
-                                // Enable button when there is NO essay in the soal
-                                const disabled = hasUraian ? 'disabled' : '';
-                                const disabledClass = hasUraian ? 'btn-outline-secondary disabled' : 'btn-outline-secondary';
+    const soalInfo = soalData[row.kode_soal] || {};
 
-                                // Only add href attribute if button is enabled (no essay questions)
-                                const href = !hasUraian ? `href="preview_hasil.php?kode_soal=${encodeURIComponent(row.kode_soal)}&id_siswa=${encodeURIComponent(row.id_siswa)}&jenis_ujian=${encodeURIComponent(row.jenis_ujian_value)}"` : '';
+    const hasUraian = soalInfo.has_uraian === true;
+    const belumDikoreksi = soalInfo.belum_dikoreksi === true;
 
-                                return `
-                                    <a class="btn btn-sm ${disabledClass}"
-                                       ${disabled}
-                                       ${href}>
-                                        <i class="fa fa-eye"></i> Preview Nilai
-                                    </a>
-                                `;
-                            }
-                        }
+    let disabled = false;
+
+    // ===== 3 KONDISI UTAMA =====
+    if (!hasUraian) {
+        // 1️⃣ Tidak ada uraian → Aktif
+        disabled = false;
+
+    } else if (hasUraian && belumDikoreksi) {
+        // 2️⃣ Ada uraian belum dikoreksi → Disable
+        disabled = true;
+
+    } else if (hasUraian && !belumDikoreksi) {
+        // 3️⃣ Ada uraian sudah dikoreksi → Aktif
+        disabled = false;
+    }
+
+    const disabledAttr = disabled ? 'disabled' : '';
+    const btnClass = disabled 
+        ? 'btn-outline-secondary disabled'
+        : 'btn-outline-primary';
+
+    const href = !disabled
+        ? `href="preview_hasil.php?kode_soal=${encodeURIComponent(row.kode_soal)}&id_siswa=${encodeURIComponent(row.id_siswa)}&jenis_ujian=${encodeURIComponent(row.jenis_ujian_value)}"`
+        : '#';
+
+    return `
+        <a class="btn btn-sm ${btnClass}"
+           ${disabledAttr}
+           ${href}>
+            <i class="fa fa-eye"></i> Preview Nilai
+        </a>
+    `;
+}
+}                
                     ];
 
                     if (!sembunyikan) {
@@ -133,6 +153,7 @@ include '../inc/datasiswa.php';
                 });
             });
         });
+        
     </script>
     <?php if (isset($_SESSION['error'])): ?>
         <script>
