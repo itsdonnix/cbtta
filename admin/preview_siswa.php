@@ -74,6 +74,61 @@ function parseJawabanSiswa($str)
 }
 $jawaban_siswa = parseJawabanSiswa($jawaban_siswa_raw);
 
+// ===== KUNCI JAWABAN (ADD THIS SECTION - COPIED FROM PREVIEW_HASIL) =====
+$query_kunci = mysqli_query(
+    $koneksi,
+    "SELECT kunci FROM soal WHERE kode_soal='$kode_soal'"
+);
+$kunci_jawaban = mysqli_fetch_assoc($query_kunci)['kunci'] ?? '';
+
+// ===== HITUNG SKOR PER SOAL (ADD THIS SECTION - COPIED FROM PREVIEW_HASIL) =====
+function removeCommasOutsideBrackets($str)
+{
+    $res = '';
+    $in = false;
+    foreach (str_split($str) as $c) {
+        if ($c === '[') $in = true;
+        if ($c === ']') $in = false;
+        if ($c === ',' && !$in) continue;
+        $res .= $c;
+    }
+    return $res;
+}
+
+$skor_per_soal = [];
+if ($kunci_jawaban) {
+    $fix = removeCommasOutsideBrackets($kunci_jawaban);
+    preg_match_all('/\[(.*?)\]/', $fix, $m);
+    $total = count($m[1]);
+    $nilai_per_soal = $total ? 100 / $total : 0;
+
+    foreach ($m[1] as $item) {
+        [$no, $kunci] = explode(':', $item, 2);
+        $no = (int)$no;
+        $jawab = $jawaban_siswa[$no] ?? '';
+
+        $q = mysqli_query($koneksi, "
+            SELECT tipe_soal 
+            FROM butir_soal 
+            WHERE kode_soal='$kode_soal' 
+            AND nomer_soal='$no'
+            AND jenis_ujian = $jenis_ujian_int
+        ");
+        $tipe = strtolower(mysqli_fetch_assoc($q)['tipe_soal'] ?? '');
+
+        if ($tipe === 'uraian') {
+            $skor_per_soal[$no] = (float)($skor_uraian[$no] ?? 0);
+            continue;
+        }
+
+        $skor = 0;
+        if (strtolower(trim($kunci)) === strtolower(trim($jawab))) {
+            $skor = $nilai_per_soal;
+        }
+        $skor_per_soal[$no] = $skor;
+    }
+}
+
 // ===== SOAL (FILTER JENIS UJIAN) =====
 $query_soal = mysqli_query(
     $koneksi,
@@ -221,6 +276,14 @@ $query_soal = mysqli_query(
                                 $jawab = isset($jawaban_siswa[$no]) ? $jawaban_siswa[$no] : '';
                                 $tipe = $soal['tipe_soal'];
                                 $opsi_huruf = ['A', 'B', 'C', 'D'];
+
+                                // Determine which score to show (ADD THIS)
+                                $skor_tampil = 0;
+                                if ($tipe === 'Uraian') {
+                                    $skor_tampil = $skor_uraian[$no] ?? 0;
+                                } else {
+                                    $skor_tampil = $skor_per_soal[$no] ?? 0;
+                                }
                             ?>
                                 <div class="row">
                                     <div class="card mb-4">
@@ -325,7 +388,7 @@ $query_soal = mysqli_query(
                                             ?>
                                             <!-- Tambahkan skor per soal di sini -->
                                             <div class="skor-soal">
-                                                <strong>Skor:</strong> <?= number_format($skor_uraian[$no] ?? 0, 2) ?>
+                                                <strong>Skor:</strong> <?= number_format($skor_tampil, 2) ?>
                                             </div>
                                         </div>
                                     </div>
