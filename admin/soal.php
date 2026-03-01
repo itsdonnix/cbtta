@@ -41,6 +41,59 @@ if (!$result) {
         table td {
             text-align: left !important;
         }
+        
+        /* Copy button styling */
+        .copy-btn {
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0 5px;
+            font-size: 14px;
+        }
+        
+        .copy-btn:hover {
+            color: #007bff;
+        }
+        
+        .kode-soal-cell, .token-cell {
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        .kode-soal-cell:hover .copy-btn,
+        .token-cell:hover .copy-btn {
+            opacity: 1;
+        }
+        
+        .kode-soal-text, .token-text {
+            margin-right: 5px;
+        }
+        
+        /* Toast notification for copy */
+        .copy-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 9999;
+            display: none;
+            animation: slideIn 0.3s ease-in-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
@@ -85,7 +138,12 @@ if (!$result) {
                                             while ($row = mysqli_fetch_assoc($result)) { ?>
                                                 <tr>
                                                     <td><?php echo $no++; ?></td>
-                                                    <td><?php echo $row['kode_soal']; ?></td>
+                                                    <td class="kode-soal-cell">
+                                                        <span class="kode-soal-text"><?php echo $row['kode_soal']; ?></span>
+                                                        <span class="copy-btn" onclick="copyToClipboard('<?php echo $row['kode_soal']; ?>', 'kode soal')" title="Salin kode soal">
+                                                            <i class="fa fa-copy"></i>
+                                                        </span>
+                                                    </td>
                                                     <td><?php echo $row['mapel']; ?></td>
                                                     <td>
                                                         <?php
@@ -110,7 +168,16 @@ if (!$result) {
                                                             <span class="badge bg-danger">Nonaktif</span>
                                                         <?php } ?>
                                                     </td>
-                                                    <td><?php echo $row['token']; ?></td>
+                                                    <td class="token-cell">
+                                                        <?php if (!empty($row['token'])) { ?>
+                                                            <span class="token-text"><?php echo $row['token']; ?></span>
+                                                            <span class="copy-btn" onclick="copyToClipboard('<?php echo $row['token']; ?>', 'token')" title="Salin token">
+                                                                <i class="fa fa-copy"></i>
+                                                            </span>
+                                                        <?php } else { ?>
+                                                            <span class="text-muted">-</span>
+                                                        <?php } ?>
+                                                    </td>
                                                     <td>
                                                         <?php if ($row['status'] == 'Aktif') { ?>
                                                             <a href="generate_token.php?id_soal=<?php echo $row['id_soal']; ?>"
@@ -159,8 +226,62 @@ if (!$result) {
             </main>
         </div>
     </div>
+    
+    <!-- Toast notification for copy -->
+    <div id="copyToast" class="copy-toast">
+        <i class="fa fa-check-circle"></i> <span id="toastMessage">Berhasil disalin!</span>
+    </div>
+    
     <?php include '../inc/js.php'; ?>
     <script>
+        // Function to copy text to clipboard
+        function copyToClipboard(text, type) {
+            // Create a temporary textarea element
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            
+            // Select and copy the text
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                // Execute copy command
+                document.execCommand('copy');
+                
+                // Update toast message based on what was copied
+                const toastMessage = document.getElementById('toastMessage');
+                if (type === 'kode soal') {
+                    toastMessage.textContent = 'Kode soal berhasil disalin!';
+                } else {
+                    toastMessage.textContent = 'Token berhasil disalin!';
+                }
+                
+                // Show toast notification
+                const toast = document.getElementById('copyToast');
+                toast.style.display = 'block';
+                
+                // Hide toast after 2 seconds
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                
+                // Show error notification
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: `Gagal menyalin ${type}`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+            
+            // Remove the temporary textarea
+            document.body.removeChild(textarea);
+        }
+
         // Tambahkan di bagian script yang sudah ada
         document.querySelectorAll('.btn-duplicate').forEach(function(button) {
             button.addEventListener('click', function(e) {
@@ -234,6 +355,7 @@ if (!$result) {
                     responsive: true
                 });
             });
+            
             document.querySelectorAll('.btn-hapus').forEach(function(button) {
                 button.addEventListener('click', function() {
                     const kodeSoal = this.getAttribute('data-kode');
