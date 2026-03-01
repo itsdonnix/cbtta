@@ -26,39 +26,35 @@ $query_check_uraian = mysqli_query($koneksi, "
     GROUP BY s.kode_soal
 ");
 
-$has_uraian = false;
-if ($query_check_uraian && mysqli_num_rows($query_check_uraian) > 0) {
-    $row_check = mysqli_fetch_assoc($query_check_uraian);
-    $has_uraian = (bool)$row_check['has_uraian'];
-}
+$query_guard = mysqli_query($koneksi, "
+    SELECT 
+        CASE WHEN COUNT(b.id_soal) > 0 THEN 1 ELSE 0 END AS has_uraian,
+        n.nilai_uraian
+    FROM soal s
+    LEFT JOIN butir_soal b 
+        ON s.kode_soal = b.kode_soal 
+        AND b.tipe_soal = 'Uraian'
+        AND b.jenis_ujian = $jenis_ujian_int
+    LEFT JOIN nilai n
+        ON n.kode_soal = s.kode_soal
+        AND n.id_siswa = '$id_siswa'
+    WHERE s.kode_soal = '$kode_soal'
+    GROUP BY s.kode_soal
+");
 
-// CONDITION 1: If the exam HAS essay questions for this jenis_ujian, show guard message
-if ($has_uraian) {
+$row_guard = mysqli_fetch_assoc($query_guard);
+
+$has_uraian = (bool)($row_guard['has_uraian'] ?? false);
+$belum_dikoreksi = $has_uraian && is_null($row_guard['nilai_uraian']);
+
+if ($belum_dikoreksi) {
 ?>
     <!DOCTYPE html>
-    <html lang="en">
+    <html>
 
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Preview Hasil Ujian</title>
+        <title>Belum Dikoreksi</title>
         <?php include '../inc/css.php'; ?>
-        <style>
-            .alert-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 300px;
-            }
-
-            .alert-content {
-                text-align: center;
-                padding: 30px;
-                border: 2px dashed #ccc;
-                border-radius: 10px;
-                background-color: #f9f9f9;
-            }
-        </style>
     </head>
 
     <body>
@@ -68,21 +64,11 @@ if ($has_uraian) {
                 <?php include 'navbar.php'; ?>
                 <main class="content">
                     <div class="container-fluid p-0">
-                        <h1>Preview Hasil Ujian</h1>
-                        <div class="row mb-4">
-                            <div class="card-header">
-                                <a href="hasil.php"><button type="button" class="btn btn-secondary">Kembali</button></a>
-                            </div>
+                        <div class="alert alert-warning mt-4">
+                            <h4><i class="fa fa-info-circle"></i> Ujian Belum Dikoreksi</h4>
+                            <p>Soal mengandung uraian dan belum dikoreksi oleh guru.</p>
                         </div>
-                        <div class="col-lg-12">
-                            <div class="alert-container">
-                                <div class="alert-content">
-                                    <h3><i class="fa fa-info-circle text-warning"></i> Informasi</h3>
-                                    <p>Preview nilai tidak tersedia untuk ujian yang mengandung soal uraian.</p>
-                                    <p>Silakan hubungi pengajar untuk melihat hasil ujian Anda.</p>
-                                </div>
-                            </div>
-                        </div>
+                        <a href="hasil.php" class="btn btn-secondary">Kembali</a>
                     </div>
                 </main>
             </div>
