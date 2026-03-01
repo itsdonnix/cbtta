@@ -238,12 +238,31 @@ $skor_per_soal = [];
 if ($kunci_jawaban) {
     $fix = removeCommasOutsideBrackets($kunci_jawaban);
     preg_match_all('/\[(.*?)\]/', $fix, $m);
-    $total = count($m[1]);
-    $nilai_per_soal = $total ? 100 / $total : 0;
+    
+    // FIRST, GET ALL VALID SOAL NUMBERS FOR THIS JENIS_UJIAN
+    $valid_soal_numbers = [];
+    $query_valid_soal = mysqli_query($koneksi, "
+        SELECT nomer_soal 
+        FROM butir_soal 
+        WHERE kode_soal = '$kode_soal' 
+        AND jenis_ujian = $jenis_ujian_int
+    ");
+    while ($row_valid = mysqli_fetch_assoc($query_valid_soal)) {
+        $valid_soal_numbers[] = (int)$row_valid['nomer_soal'];
+    }
+    
+    $total_valid_soal = count($valid_soal_numbers);
+    $nilai_per_soal = $total_valid_soal ? 100 / $total_valid_soal : 0;
 
     foreach ($m[1] as $item) {
         [$no, $kunci] = explode(':', $item, 2);
         $no = (int)$no;
+        
+        // ONLY PROCESS IF THIS SOAL NUMBER BELONGS TO THE CURRENT JENIS_UJIAN
+        if (!in_array($no, $valid_soal_numbers)) {
+            continue;
+        }
+        
         $jawab = $jawaban_siswa[$no] ?? '';
 
         $q = mysqli_query($koneksi, "
