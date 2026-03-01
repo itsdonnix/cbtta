@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama_soal = mysqli_real_escape_string($koneksi, $_POST['nama_soal']);
     $mapel = mysqli_real_escape_string($koneksi, $_POST['mapel']);
     $kelas = mysqli_real_escape_string($koneksi, $_POST['kelas']);
+    $rombel = !empty($_POST['rombel']) ? mysqli_real_escape_string($koneksi, $_POST['rombel']) : NULL;
     $tampilan_soal = mysqli_real_escape_string($koneksi, $_POST['tampilan_soal']);
     $waktu_ujian = mysqli_real_escape_string($koneksi, $_POST['waktu_ujian']);
     $tanggal = mysqli_real_escape_string($koneksi, $_POST['tanggal']);
@@ -46,6 +47,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Ambil tanggal asli dari database untuk perbandingan
     $tanggal_asli = mysqli_real_escape_string($koneksi, $_POST['tanggal_asli']);
     $tanggal_ujian_susulan_asli = mysqli_real_escape_string($koneksi, $_POST['tanggal_ujian_susulan_asli']);
+
+    // Validasi kelas yang dipilih ada di tabel siswa
+    $cek_kelas = mysqli_query($koneksi, "SELECT DISTINCT kelas FROM siswa WHERE kelas = '$kelas'");
+    if (mysqli_num_rows($cek_kelas) == 0) {
+        $_SESSION['error'] = 'Kelas yang dipilih tidak valid.';
+        header("Location: edit_soal.php?id_soal=$id_soal");
+        exit;
+    }
+
+    // Validasi relasi kelas dan rombel jika rombel diisi
+    if (!empty($rombel)) {
+        $cek_relasi = mysqli_query($koneksi, "SELECT * FROM siswa WHERE kelas = '$kelas' AND rombel = '$rombel' LIMIT 1");
+        if (mysqli_num_rows($cek_relasi) == 0) {
+            $_SESSION['error'] = 'Rombel yang dipilih tidak sesuai dengan kelas yang dipilih.';
+            header("Location: edit_soal.php?id_soal=$id_soal");
+            exit;
+        }
+    }
 
     // Validasi tanggal ujian - hanya jika tanggal diubah dari nilai asli
     $today = date('Y-m-d');
@@ -72,12 +91,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
+    // Handle rombel NULL value
+    $rombel_value = !empty($rombel) ? "'$rombel'" : "NULL";
+
     // Update data soal
     $update_query = "UPDATE soal SET 
                         kode_soal = '$kode_soal', 
                         nama_soal = '$nama_soal',
                         mapel = '$mapel', 
-                        kelas = '$kelas', 
+                        kelas = '$kelas',
+                        rombel = $rombel_value,
                         tampilan_soal = '$tampilan_soal', 
                         waktu_ujian = '$waktu_ujian', 
                         tanggal = '$tanggal',
@@ -107,6 +130,20 @@ $today = date('Y-m-d');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Soal</title>
     <?php include '../inc/css.php'; ?>
+    <style>
+        /* Loading indicator for rombel dropdown */
+        .rombel-loading {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #007bff;
+        }
+        .form-group {
+            position: relative;
+        }
+    </style>
     <script>
         function updateDateValidation() {
             const tanggalInput = document.getElementById('tanggal');
@@ -219,6 +256,21 @@ $today = date('Y-m-d');
                                                 <?php endwhile; ?>
                                             </select>
                                         </div>
+
+                                        <!-- Rombel Dropdown -->
+                                        <div class="mb-3 form-group">
+                                            <label for="rombel" class="form-label">Rombel (Opsional)</label>
+                                            <select class="form-control" id="rombel" name="rombel">
+                                                <option value="">-- Pilih Rombel (Opsional) --</option>
+                                                <option value="">Semua Rombel</option>
+                                                <!-- Options will be loaded dynamically based on kelas selection -->
+                                            </select>
+                                            <small class="text-muted">Kosongkan atau pilih "Semua Rombel" untuk berlaku di semua rombel dalam kelas yang dipilih</small>
+                                            <div class="rombel-loading" id="rombelLoading">
+                                                <i class="fa fa-spinner fa-spin"></i> Loading...
+                                            </div>
+                                        </div>
+
                                         <div class="mb-3">
                                             <label for="waktu_ujian" class="form-label">Waktu Ujian (Menit)</label>
                                             <input type="number" class="form-control" id="waktu_ujian" name="waktu_ujian" value="<?php echo $row['waktu_ujian']; ?>" required>
@@ -281,6 +333,85 @@ $today = date('Y-m-d');
         </div>
     </div>
     <?php include '../inc/js.php'; ?>
+
+    <!-- JavaScript for reactive rombel dropdown with previous value tracking -->
+    <script>
+    $(document).ready(function() {
+        var previousRombel = '<?php echo $row['rombel']; ?>'; // Store the current rombel value from database
+        
+        // Store rombel value when it changes
+        $('#rombel').change(function() {
+            previousRombel = $(this).val();
+        });
+        
+        // Function to load rombel based on selected kelas
+        function loadRombel(kelas, selectedRombel) {
+            var rombelDropdown = $('#rombel');
+            var loading = $('#rombelLoading');
+            
+            if (kelas) {
+                // Show loading indicator
+                loading.show();
+                rombelDropdown.prop('disabled', true);
+                
+                // Make AJAX call to fetch rombel based on selected kelas
+                $.ajax({
+                    url: 'get_rombel.php',
+                    type: 'POST',
+                    data: {kelas: kelas},
+                    dataType: 'json',
+                    success: function(data) {
+                        // Clear current options
+                        rombelDropdown.empty();
+                        rombelDropdown.append('<option value="">-- Pilih Rombel (Opsional) --</option>');
+                        rombelDropdown.append('<option value="">Semua Rombel</option>');
+                        
+                        // Add new options
+                        $.each(data, function(index, rombel) {
+                            rombelDropdown.append('<option value="' + rombel + '">' + rombel + '</option>');
+                        });
+                        
+                        // Set the selected value
+                        if (selectedRombel) {
+                            rombelDropdown.val(selectedRombel);
+                        }
+                        
+                        // Hide loading indicator
+                        loading.hide();
+                        rombelDropdown.prop('disabled', false);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching rombel:', error);
+                        rombelDropdown.empty();
+                        rombelDropdown.append('<option value="">-- Error loading rombel --</option>');
+                        loading.hide();
+                        rombelDropdown.prop('disabled', false);
+                    }
+                });
+            } else {
+                // If no kelas selected, disable and clear rombel dropdown
+                rombelDropdown.empty();
+                rombelDropdown.append('<option value="">-- Pilih Kelas Terlebih Dahulu --</option>');
+                rombelDropdown.prop('disabled', true);
+                loading.hide();
+            }
+        }
+        
+        // Initial load: Load rombel based on current kelas and set selected value
+        var initialKelas = $('#kelas').val();
+        if (initialKelas) {
+            loadRombel(initialKelas, previousRombel);
+        }
+        
+        // Handle kelas change
+        $('#kelas').change(function() {
+            var kelas = $(this).val();
+            // When kelas changes, try to preserve the previous rombel value
+            // but only if it's valid for the new kelas (will be checked on server side)
+            loadRombel(kelas, previousRombel);
+        });
+    });
+    </script>
 </body>
 
 </html>
