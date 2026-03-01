@@ -15,6 +15,15 @@ $id_siswa    = $_GET['id_siswa'];
 $jenis_ujian = $_GET['jenis_ujian']; // utama | susulan
 $jenis_ujian_int = ($jenis_ujian === 'susulan') ? 1 : 0;
 
+// ===== GET SUBJECT NAME FOR TITLE =====
+$query_mapel = mysqli_query($koneksi, "
+    SELECT mapel 
+    FROM soal
+    WHERE kode_soal = '$kode_soal'
+");
+$mapel_data = mysqli_fetch_assoc($query_mapel);
+$nama_mapel = ucfirst($mapel_data['mapel']) ?? 'Ujian';
+
 // ===== CHECK IF SOAL HAS ESSAY QUESTIONS FOR THIS SPECIFIC JENIS_UJIAN =====
 $query_check_uraian = mysqli_query($koneksi, "
     SELECT CASE WHEN COUNT(q.id_soal) > 0 THEN 1 ELSE 0 END as has_uraian
@@ -53,7 +62,7 @@ if ($belum_dikoreksi) {
     <html>
 
     <head>
-        <title>Belum Dikoreksi</title>
+        <title>Belum Dikoreksi - <?= htmlspecialchars($nama_mapel) ?></title>
         <?php include '../inc/css.php'; ?>
     </head>
 
@@ -117,7 +126,7 @@ if (!$query || mysqli_num_rows($query) === 0) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Preview Hasil Ujian</title>
+        <title>Preview Hasil Ujian <?= htmlspecialchars($nama_mapel) ?></title>
         <?php include '../inc/css.php'; ?>
         <style>
             .alert-container {
@@ -275,7 +284,7 @@ $query_soal = mysqli_query(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview Jawaban Siswa</title>
+    <title>Preview Hasil Ujian <?= htmlspecialchars($nama_mapel) ?></title>
     <?php include '../inc/css.php'; ?>
     <style>
         /* style tambahan untuk header 2 kolom */
