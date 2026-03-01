@@ -150,7 +150,26 @@ foreach ($jawaban_array as $item) {
     }
 }
 
-$total_soal = count($kunci_array);
+// Filter kunci array berdasarkan jenis ujian
+$filtered_kunci_array = [];
+foreach ($kunci_array as $kunci_item) {
+    if (strpos($kunci_item, ':') !== false) {
+        list($nomer_kunci, $isi_kunci) = explode(':', $kunci_item, 2);
+        
+        // Cek jenis_ujian untuk soal ini
+        $q_cek = mysqli_query($koneksi, "SELECT jenis_ujian FROM butir_soal 
+                                         WHERE kode_soal = '$kode_soal' 
+                                         AND nomer_soal = '$nomer_kunci'");
+        $data_cek = mysqli_fetch_assoc($q_cek);
+        
+        // Hanya gunakan soal yang sesuai dengan jenis ujian siswa
+        if ($data_cek && (int)$data_cek['jenis_ujian'] === $jenis_ujian) {
+            $filtered_kunci_array[] = $kunci_item;
+        }
+    }
+}
+
+$total_soal = count($filtered_kunci_array);
 $benar = 0;
 $salah = 0;
 $kurang_lengkap = 0;
@@ -160,7 +179,7 @@ $nilai_per_soal = $total_soal > 0 ? 100 / $total_soal : 0;
 $ada_uraian = false;
 
 for ($i = 0; $i < $total_soal; $i++) {
-    list($nomer_kunci, $isi_kunci) = explode(':', $kunci_array[$i], 2);
+    list($nomer_kunci, $isi_kunci) = explode(':', $filtered_kunci_array[$i], 2);
     $isi_jawaban = $jawaban_siswa_arr[$nomer_kunci] ?? '';
 
     // Ambil tipe soal
@@ -269,12 +288,13 @@ if (mysqli_num_rows($q_nilai) > 0) {
 }
 
 // Update status ujian jadi Selesai (jika diperlukan)
-mysqli_query($koneksi, "UPDATE jawaban_siswa SET status_ujian = 'Selesai' WHERE id_siswa='$id_siswa' AND kode_soal='$kode_soal'");
-// Siapkan query update dengan prepared statement
 $stmt = $koneksi->prepare("UPDATE jawaban_siswa SET status_ujian = 'Selesai' WHERE id_siswa = ? AND kode_soal = ?");
 if (!$stmt) {
     die("Prepare gagal: " . $koneksi->error);
 }
+mysqli_stmt_bind_param($stmt, "ss", $id_siswa, $kode_soal);
+mysqli_stmt_execute($stmt);
+mysqli_stmt_close($stmt);
 
 ?>
 <!DOCTYPE html>
