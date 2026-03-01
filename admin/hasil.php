@@ -180,9 +180,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <select class="form-select" name="kelas_rombel" id="kelas_rombel">
                                             <option value="">Semua Kelas</option>
                                             <?php
-                                            $qKR = mysqli_query($koneksi, "SELECT DISTINCT CONCAT(kelas, ' - ', rombel)
-                                                                          AS kelas_rombel FROM siswa
-                                                                          ORDER BY kelas, rombel");
+                                            $qKR = mysqli_query($koneksi, "SELECT DISTINCT CONCAT(kelas, ' - ', rombel) AS kelas_rombel 
+                                                                            FROM siswa 
+                                                                            WHERE kelas IS NOT NULL AND rombel IS NOT NULL 
+                                                                            ORDER BY kelas, rombel");
                                             while ($kr = mysqli_fetch_assoc($qKR)) {
                                                 echo "<option value='{$kr['kelas_rombel']}'>{$kr['kelas_rombel']}</option>";
                                             }
