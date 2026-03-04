@@ -84,11 +84,11 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         </a>
                     </li>
 
-                    <li class="sidebar-item <?= ($currentPage == 'faq.php') ? 'active' : '' ?>">
+                    <!-- <li class="sidebar-item <?= ($currentPage == 'faq.php') ? 'active' : '' ?>">
                         <a class="sidebar-link" href="faq.php">
                             <i class="align-middle fa-solid fa-robot"></i> <span class="align-middle">FAQ</span>
                         </a>
-                    </li>
+                    </li> -->
 
                     <!-- <li class="sidebar-item <?//= ($currentPage == 'chatbox_siswa.php') ? 'active' : '' ?>">
                         <a class="sidebar-link" href="chatbox_siswa.php">
