@@ -316,6 +316,35 @@ mysqli_stmt_close($stmt);
             }
         }
     </style>
+    <script>
+        // Hapus semua data timer dari localStorage saat halaman simpan_jawaban.php dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hapus semua item localStorage yang berhubungan dengan timer
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('timer_') || key.startsWith('start_time_'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            
+            // Hapus semua key yang ditemukan
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log('Removed from localStorage:', key);
+            });
+            
+            // Hapus juga kemungkinan key spesifik untuk ujian ini
+            if (<?= json_encode($kode_soal) ?> && <?= json_encode($id_siswa) ?>) {
+                const storageKey = `timer_<?= $kode_soal ?>_<?= $id_siswa ?>`;
+                const startKey = `start_time_<?= $kode_soal ?>_<?= $id_siswa ?>`;
+                
+                localStorage.removeItem(storageKey);
+                localStorage.removeItem(startKey);
+                console.log('Removed specific keys:', storageKey, startKey);
+            }
+        });
+    </script>
 </head>
 
 <body>
