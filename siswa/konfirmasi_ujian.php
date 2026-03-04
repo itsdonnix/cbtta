@@ -263,12 +263,12 @@ $_SESSION['konfirmasi_ujian'] = true;
                                                 <td>
                                                     <?php 
                                                     $tanggal_formatted = strftime('%d %B %Y', strtotime($data_soal['tanggal']));
-                                                    echo $tanggal_formatted . ' Pukul ' . formatWaktu($data_soal['waktu']) . ' WIB';
+                                                    echo $tanggal_formatted . ' ' . formatWaktu($data_soal['waktu']);
                                                     ?>
                                                     <?php if (!empty($data_soal['tanggal_ujian_susulan']) && $data_soal['tanggal_ujian_susulan'] != '0000-00-00'): ?>
                                                         <br><small class="text-muted">
                                                             Susulan: <?= strftime('%d %B %Y', strtotime($data_soal['tanggal_ujian_susulan'])) ?> 
-                                                            <?= !empty($data_soal['waktu_ujian_susulan']) ? 'Pukul ' . formatWaktu($data_soal['waktu_ujian_susulan']) . ' WIB' : '' ?>
+                                                            <?= !empty($data_soal['waktu_ujian_susulan']) ? formatWaktu($data_soal['waktu_ujian_susulan']) : '' ?>
                                                         </small>
                                                     <?php endif; ?>
                                                 </td>
