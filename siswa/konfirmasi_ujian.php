@@ -236,11 +236,7 @@ $_SESSION['konfirmasi_ujian'] = true;
                                         <!-- Aturan Ujian Section -->
                                         <?php if (!empty($data_tema['aturan_ujian'])): ?>
                                             <h5 class="mt-4 mb-3">📋 Aturan Ujian</h5>
-                                            <div class="card mb-4">
-                                                <div class="card-body bg-light rounded">
-                                                    <?= $data_tema['aturan_ujian'] ?>
-                                                </div>
-                                            </div>
+                                            <pre class="mb-4" style="white-space: pre-wrap; font-family: sans-serif; max-height: 20rem;"><?= $data_tema['aturan_ujian'] ?></pre>
                                         <?php endif; ?>
 
                                         <div class="text-start mt-4">
