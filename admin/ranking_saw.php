@@ -15,12 +15,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $where = "n.kode_soal IS NOT NULL"; // Kondisi awal
 
-    // Filter Kelas Rombel
+    // Filter Kelas Rombel - LOGIC UPDATED TO MATCH hasil.php
     if (!empty($kelas_rombel)) {
-        list($kelas, $rombel) = explode(' - ', $kelas_rombel);
+        // Updated parsing logic to handle strings with or without the " - " separator
+        if (strpos($kelas_rombel, ' - ') !== false) {
+            list($kelas, $rombel) = explode(' - ', $kelas_rombel);
+        } else {
+            $kelas = $kelas_rombel;
+            $rombel = '';
+        }
+        
         $kelas = mysqli_real_escape_string($koneksi, $kelas);
-        $rombel = mysqli_real_escape_string($koneksi, $rombel);
-        $where .= " AND s.kelas = '$kelas' AND s.rombel = '$rombel'";
+        // Only add rombel filter if it exists
+        if (!empty($rombel)) {
+            $rombel = mysqli_real_escape_string($koneksi, $rombel);
+            $where .= " AND s.kelas = '$kelas' AND s.rombel = '$rombel'";
+        } else {
+            $where .= " AND s.kelas = '$kelas' AND (s.rombel IS NULL OR s.rombel = '')";
+        }
     }
 
     // Filter Kode Soal
@@ -238,7 +250,7 @@ if (!empty($kode_soal)) {
                                     </div>
                                 </div>
 
-                                <!-- Filter Kelas Rombel -->
+                                <!-- Filter Kelas Rombel - LOGIC UPDATED TO MATCH hasil.php -->
                                 <div class="col-md-3">
                                     <label for="kelas_rombel" class="form-label">Kelas & Rombel</label>
                                     <div class="input-group">
@@ -246,9 +258,10 @@ if (!empty($kode_soal)) {
                                         <select class="form-select" name="kelas_rombel" id="kelas_rombel">
                                             <option value="">Semua Kelas</option>
                                             <?php
-                                            $qKR = mysqli_query($koneksi, "SELECT DISTINCT CONCAT(kelas, ' - ', rombel) AS kelas_rombel 
+                                            // Updated query to conditionally show " - " only if rombel is not null
+                                            $qKR = mysqli_query($koneksi, "SELECT DISTINCT CONCAT(kelas, IFNULL(CONCAT(' - ', rombel), '')) AS kelas_rombel 
                                                                             FROM siswa 
-                                                                            WHERE kelas IS NOT NULL AND rombel IS NOT NULL 
+                                                                            WHERE kelas IS NOT NULL 
                                                                             ORDER BY kelas, rombel");
                                             while ($kr = mysqli_fetch_assoc($qKR)) {
                                                 echo "<option value='{$kr['kelas_rombel']}'>{$kr['kelas_rombel']}</option>";
