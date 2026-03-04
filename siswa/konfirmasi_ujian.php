@@ -5,6 +5,15 @@ include '../inc/functions.php';
 check_login('siswa');
 include '../inc/datasiswa.php';
 
+$locale = setlocale(LC_TIME, 'id_ID.UTF-8');
+
+if ($locale === false) {
+    die('Locale id_ID.UTF-8 is not installed on this system.');
+}
+
+// Set locale ke Indonesia untuk PHP 7.2
+setlocale(LC_TIME, 'id_ID.utf8', 'Indonesian', 'id_ID', 'indo', 'id');
+
 $kode_soal = $_GET['kode_soal'] ?? '';
 
 if (!$id_siswa || !$kode_soal) {
@@ -249,7 +258,18 @@ $_SESSION['konfirmasi_ujian'] = true;
                                             </tr>
                                             <tr>
                                                 <th width="30%">Tanggal Ujian</th>
-                                                <td><?= htmlspecialchars($data_soal['tanggal']) ?></td>
+                                                <td>
+                                                    <?php 
+                                                    $tanggal_formatted = strftime('%d %B %Y', strtotime($data_soal['tanggal']));
+                                                    echo $tanggal_formatted . ' Pukul ' . $data_soal['waktu'] . ' WIB';
+                                                    ?>
+                                                    <?php if (!empty($data_soal['tanggal_ujian_susulan']) && $data_soal['tanggal_ujian_susulan'] != '0000-00-00'): ?>
+                                                        <br><small class="text-muted">
+                                                            Susulan: <?= strftime('%d %B %Y', strtotime($data_soal['tanggal_ujian_susulan'])) ?> 
+                                                            <?= !empty($data_soal['waktu_ujian_susulan']) ? 'Pukul ' . $data_soal['waktu_ujian_susulan'] . ' WIB' : '' ?>
+                                                        </small>
+                                                    <?php endif; ?>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <th width="30%">Durasi Ujian</th>
