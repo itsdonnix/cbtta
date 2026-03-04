@@ -80,7 +80,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 
                     <li class="sidebar-item <?= ($currentPage == 'online.php') ? 'active' : '' ?>">
                         <a class="sidebar-link" href="online.php">
-                            <i class="align-middle fas fa-chalkboard-teacher"></i> <span class="align-middle">Who's Online</span>
+                            <i class="align-middle fas fa-chalkboard-teacher"></i> <span class="align-middle">Online</span>
                         </a>
                     </li>
 
