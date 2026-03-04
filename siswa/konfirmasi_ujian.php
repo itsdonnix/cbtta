@@ -5,10 +5,12 @@ include '../inc/functions.php';
 check_login('siswa');
 include '../inc/datasiswa.php';
 
-$locale = setlocale(LC_TIME, 'id_ID.UTF-8');
-
-if ($locale === false) {
-    die('Locale id_ID.UTF-8 is not installed on this system.');
+// Function to format time to HH:MM (24-hour format)
+function formatWaktu($waktu) {
+    if (empty($waktu)) return '';
+    // If time includes seconds, remove them
+    $parts = explode(':', $waktu);
+    return $parts[0] . ':' . $parts[1]; // Return only hour and minute
 }
 
 // Set locale ke Indonesia untuk PHP 7.2
@@ -261,12 +263,12 @@ $_SESSION['konfirmasi_ujian'] = true;
                                                 <td>
                                                     <?php 
                                                     $tanggal_formatted = strftime('%d %B %Y', strtotime($data_soal['tanggal']));
-                                                    echo $tanggal_formatted . ' Pukul ' . $data_soal['waktu'] . ' WIB';
+                                                    echo $tanggal_formatted . ' Pukul ' . formatWaktu($data_soal['waktu']) . ' WIB';
                                                     ?>
                                                     <?php if (!empty($data_soal['tanggal_ujian_susulan']) && $data_soal['tanggal_ujian_susulan'] != '0000-00-00'): ?>
                                                         <br><small class="text-muted">
                                                             Susulan: <?= strftime('%d %B %Y', strtotime($data_soal['tanggal_ujian_susulan'])) ?> 
-                                                            <?= !empty($data_soal['waktu_ujian_susulan']) ? 'Pukul ' . $data_soal['waktu_ujian_susulan'] . ' WIB' : '' ?>
+                                                            <?= !empty($data_soal['waktu_ujian_susulan']) ? 'Pukul ' . formatWaktu($data_soal['waktu_ujian_susulan']) . ' WIB' : '' ?>
                                                         </small>
                                                     <?php endif; ?>
                                                 </td>
