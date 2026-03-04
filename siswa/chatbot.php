@@ -210,14 +210,14 @@
 }
 </style>
 
-<div id="chatbotCBT" class="minimized closed" role="dialog" aria-label="Chatbot Asisten CBT">
+<!-- <div id="chatbotCBT" class="minimized closed" role="dialog" aria-label="Chatbot Asisten CBT">
   <div class="header">
     <i class="fa-solid fa-robot"></i> Asisten CBT
     <button class="btn-minimize" onclick="event.stopPropagation(); minimizeChatbot()">—</button>
     <button class="btn-close" onclick="event.stopPropagation(); closeChatbot()">✕</button>
   </div>
   <div class="body" id="cbtBody" style="display:none;">
-    <!-- indikator animasi -->
+     indikator anima
     <div id="typingIndicator" class="bot">
       <span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>
     </div>
@@ -230,7 +230,7 @@
 
 <div id="btnOpenChatbot" onclick="openChatbot()" onkeydown="if(event.key==='Enter' || event.key===' ') openChatbot()">
   <i class="fa-solid fa-robot"></i>
-</div>
+</div> -->
 
 <script>
 const chatbot = document.getElementById("chatbotCBT");
