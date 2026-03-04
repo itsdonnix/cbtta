@@ -43,16 +43,42 @@ if (strtolower($data_soal['status']) !== 'aktif') {
     header('Location: ujian.php');
     exit;
 }
+
 // Cek jika tanggal hari ini kurang dari tanggal soal (belum dimulai)
 $tanggal_soal = $data_soal['tanggal'];
+$waktu_soal = $data_soal['waktu'];
+$waktu_ujian_duration = $data_soal['waktu_ujian'];
+$tanggal_ujian_susulan = $data_soal['tanggal_ujian_susulan'];
+$waktu_ujian_susulan = $data_soal['waktu_ujian_susulan'];
 $tanggal_hari_ini = date('Y-m-d');
+$waktu_hari_ini = date('H:i:s');
 
+// Determine if current exam is utama or susulan (same logic as mulaiujian.php)
+$is_ujian_susulan = false;
+
+// Create datetime objects for comparison
+$current_datetime = strtotime($tanggal_hari_ini . ' ' . $waktu_hari_ini);
+$utama_datetime = strtotime($tanggal_soal . ' ' . $waktu_soal);
+$waktu_ujian_duration_ms = ($waktu_ujian_duration * 60);
+
+// Check if we're in susulan period
+if (!empty($tanggal_ujian_susulan) && !empty($waktu_ujian_susulan)) {
+    $susulan_datetime = strtotime($tanggal_ujian_susulan . ' ' . $waktu_ujian_susulan);
+
+    // If current datetime is on or after susulan datetime, it's susulan exam
+    if ($current_datetime + $waktu_ujian_duration_ms >= $susulan_datetime) {
+        $is_ujian_susulan = true;
+    }
+}
+
+// Basic validation checks
 if (strtotime($tanggal_hari_ini) < strtotime($tanggal_soal)) {
     $_SESSION['alert'] = true;
     $_SESSION['warning_message'] = 'Soal belum bisa dikerjakan. Jadwal ujian belum dimulai.';
     header('Location: ujian.php');
     exit;
 }
+
 if ($data_siswa['kelas'] !== $data_soal['kelas']) {
     $_SESSION['alert'] = true;
     $_SESSION['warning_message'] = 'Soal ini bukan untuk kelas kamu.';
@@ -78,13 +104,15 @@ if (mysqli_num_rows($q_nilai) > 0) {
     exit;
 }
 
-// Hitung jumlah soal
-$q_jumlah = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM butir_soal WHERE kode_soal = '$kode_soal'");
+// Hitung jumlah soal berdasarkan tipe ujian yang akan dikerjakan
+$jenis_ujian_filter = $is_ujian_susulan ? '1' : '0';
+$q_jumlah = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM butir_soal WHERE kode_soal = '$kode_soal' AND jenis_ujian = '$jenis_ujian_filter'");
 $data_jumlah = mysqli_fetch_assoc($q_jumlah);
 $jumlah_soal = $data_jumlah['total'];
+
 $q_tema = mysqli_query($koneksi, "SELECT * FROM pengaturan WHERE id = 1 LIMIT 1");
 $data_tema = mysqli_fetch_assoc($q_tema);
-$warna_tema = $data_tema['warna_tema'] ?? '#0d6efd'; // default jika tidak ada data
+$warna_tema = $data_tema['warna_tema'] ?? '#0d6efd';
 $_SESSION['konfirmasi_ujian'] = true;
 ?>
 
@@ -228,8 +256,21 @@ $_SESSION['konfirmasi_ujian'] = true;
                                                 <td><?= htmlspecialchars($data_soal['waktu_ujian']) ?> menit</td>
                                             </tr>
                                             <tr>
+                                                <th width="30%">Jenis Ujian</th>
+                                                <td>
+                                                    <span class="badge bg-<?php echo $is_ujian_susulan ? 'warning text-dark' : 'primary'; ?>">
+                                                        <i class="fas fa-<?php echo $is_ujian_susulan ? 'calendar-alt' : 'clipboard-check'; ?> me-1"></i>
+                                                        Ujian <?php echo $is_ujian_susulan ? 'Susulan' : 'Utama'; ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
                                                 <th width="30%">Jumlah Soal</th>
-                                                <td><?= $jumlah_soal ?></td>
+                                                <td>
+                                                    <span class="badge bg-<?php echo $is_ujian_susulan ? 'warning text-dark' : 'primary'; ?>">
+                                                        <?= $jumlah_soal ?> soal
+                                                    </span>
+                                                </td>
                                             </tr>
                                         </table>
 
